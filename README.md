@@ -373,6 +373,35 @@ Add: feature
 Fix: bug
 Refactor: code cleanup
 ```
+Here’s a more concise version you can paste directly into your README:
+
+---
+
+## 🔀 Branching & PR Policy
+
+All Pull Requests (**PRs**) must be made to the `staging` branch only. Direct PRs to `main` are not allowed.
+
+---
+
+### 🧠 Why `staging` exists
+
+The `staging` branch acts as a **testing and integration layer** between development and production:
+
+* **feature branches** → individual work (`surname/feature`)
+* **staging** → combines and tests features together
+* **main** → stable, production-ready code only
+
+This ensures `main` stays **clean, stable, and always working**.
+
+---
+
+### 🔁 Workflow
+
+```text
+feature/surname/feature → staging → main
+```
+
+All features are merged into `staging` first, tested, then promoted to `main`.
 
 ---
 
