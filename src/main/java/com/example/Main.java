@@ -9,10 +9,10 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        Label label = new Label("Hello JavaFX + Maven + WSL!");
+        Label label = new Label("Welcome to Tron: Light Cycles!");
         Scene scene = new Scene(label, 400, 200);
 
-        stage.setTitle("My First JavaFX App");
+        stage.setTitle("Tron: Light Cycles");
         stage.setScene(scene);
         stage.show();
     }
