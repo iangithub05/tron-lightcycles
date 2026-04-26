@@ -9,7 +9,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        Label label = new Label("Welcome!");
+        Label label = new Label("Welcome!!!");
         Scene scene = new Scene(label, 400, 200);
 
         stage.setTitle("Tron: Light Cycles");
