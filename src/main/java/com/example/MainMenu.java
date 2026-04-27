@@ -26,21 +26,32 @@ public class MainMenu {
         Pane layout = new Pane();
         layout.setBackground(createBackground("/images/background.png"));
 
+        // -- game mode options -----------------------------------------------------
+        
 		Button multiplayerButton = createButton("/images/button_multiplayer.png", 0.30);
 		multiplayerButton.setOnAction(e -> app.showGame());
+        
         Button singleplayerButton = createButton("/images/button_singleplayer.png", 0.30);
 		singleplayerButton.setOnAction(e -> app.showGame());
-        Button exit = new Button("Exit");
-        exit.setOnAction(e -> System.exit(0));
-        
-        VBox playButtons = new VBox(5, multiplayerButton, singleplayerButton);
-        playButtons.setAlignment(Pos.BOTTOM_LEFT);
 
+        VBox playButtons = new VBox(5, multiplayerButton, singleplayerButton);
         playButtons.setLayoutX(50);
         playButtons.setLayoutY(375);
 
-        layout.getChildren().addAll(playButtons, exit);
-       
+        // -- misc -----------------------------------------------------
+
+        Button configButton = createButton("/images/button_config.png", 0.10);
+        Button aboutButton = createButton("/images/button_about.png", 0.10);
+
+        VBox settingsButtons = new VBox(5, configButton, aboutButton);
+        settingsButtons.setAlignment(Pos.CENTER);
+
+        Button exit = createButton("/images/button_exit.png", 0.10);
+        exit.setOnAction(e -> System.exit(0));
+        exit.setLayoutX(663);
+        exit.setLayoutY(97);
+
+        layout.getChildren().addAll(playButtons, settingsButtons, exit);
         return layout;
     }
 
