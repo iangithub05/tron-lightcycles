@@ -1,11 +1,22 @@
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/GameOverScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/GameScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Trail.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/MainMenu.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Game.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Direction.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/input/InputManager.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/input/KeyBindings.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Main.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Player.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Point.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\controllers\GameOverScreen.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\controllers\GameScreen.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\controllers\MainMenu.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\Main.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Difficulty.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Direction.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Game.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\GameMode.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\GameRules.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Player.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Point.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\models\Trail.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\AIController.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\AvoidDeathAIController.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\Controller.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\GameSession.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\PathfindingAIController.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\PlayerController.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\services\RandomAIController.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\utils\ConfigManager.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\utils\InputManager.java
+D:\thirdSY\2nd sem\137\project\tron-lightcycles\src\main\java\com\example\utils\KeyBindings.java
