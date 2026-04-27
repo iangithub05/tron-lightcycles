@@ -1,11 +1,12 @@
 package com.example;
 
 import com.example.input.InputManager;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -46,6 +47,20 @@ public class Main extends Application {
 
     public void showMainMenu() {
         MainMenu menu = new MainMenu(this);
+        scene.setRoot(menu.getView());
+
+        Platform.runLater(() -> scene.getRoot().requestFocus());
+    }
+
+    public void showSinglePlayerMenu() {
+        SinglePlayerMenu menu = new SinglePlayerMenu(this);
+        scene.setRoot(menu.getView());
+
+        Platform.runLater(() -> scene.getRoot().requestFocus());
+    }
+
+    public void showMultiplayerMenu() {
+        MultiplayerMenu menu = new MultiplayerMenu(this);
         scene.setRoot(menu.getView());
 
         Platform.runLater(() -> scene.getRoot().requestFocus());
