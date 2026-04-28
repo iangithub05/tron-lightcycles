@@ -4,8 +4,8 @@ import com.example.input.InputManager;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -17,55 +17,43 @@ public class Main extends Application {
     public void start(Stage stage) {
         this.stage = stage;
 
-        // Start with empty root (we will swap screens)
-        scene = new Scene(new Pane(), 800, 600);
+        scene = new Scene(new Pane(), Game.WIDTH, Game.HEIGHT);
 
-        // GLOBAL INPUT HANDLING (IMPORTANT)
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-            System.out.println("KEY PRESSED: " + e.getCode());
-            InputManager.press(e.getCode());
-        });
+        // Global keyboard input
+        scene.addEventFilter(KeyEvent.KEY_PRESSED,  e -> InputManager.press(e.getCode()));
+        scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> InputManager.release(e.getCode()));
 
-        scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> {
-            System.out.println("KEY RELEASED: " + e.getCode());
-            InputManager.release(e.getCode());
-        });
-
-        // Start at main menu
         showMainMenu();
 
         stage.setTitle("Tron: Light Cycles");
+        stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
 
-        // ensures focus works immediately
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    // ---------------- SCREEN NAVIGATION ----------------
+    // ── Screen Navigation ──────────────────────────────────────────────────
 
     public void showMainMenu() {
         MainMenu menu = new MainMenu(this);
         scene.setRoot(menu.getView());
-
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    public void showGame() {
-        GameScreen gameScreen = new GameScreen(this);
+    public void showGame(GameMode mode) {
+        GameScreen gameScreen = new GameScreen(this, mode);
         scene.setRoot(gameScreen.getView());
-
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    public void showGameOver(String result) {
-        GameOverScreen over = new GameOverScreen(this, result);
+    public void showGameOver(boolean won, GameMode mode, String message) {
+        GameOverScreen over = new GameOverScreen(this, won, mode, message);
         scene.setRoot(over.getView());
-
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    // ---------------- ENTRY POINT ----------------
+    // ── Entry Point ────────────────────────────────────────────────────────
 
     public static void main(String[] args) {
         launch();

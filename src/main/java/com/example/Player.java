@@ -12,25 +12,25 @@ public class Player {
         this.x = x;
         this.y = y;
         this.direction = Direction.RIGHT;
-        this.trail = new Trail(); // MUST NOT BE NULL
+        this.trail = new Trail();
     }
 
     public void move() {
         trail.addPoint(x, y);
 
         switch (direction) {
-            case UP -> y -= speed;
-            case DOWN -> y += speed;
-            case LEFT -> x -= speed;
+            case UP    -> y -= speed;
+            case DOWN  -> y += speed;
+            case LEFT  -> x -= speed;
             case RIGHT -> x += speed;
         }
     }
 
     public void setDirection(Direction newDir) {
-        // prevent reverse
-        if ((direction == Direction.UP && newDir == Direction.DOWN) ||
-            (direction == Direction.DOWN && newDir == Direction.UP) ||
-            (direction == Direction.LEFT && newDir == Direction.RIGHT) ||
+        // Prevent 180-degree reversal
+        if ((direction == Direction.UP    && newDir == Direction.DOWN)  ||
+            (direction == Direction.DOWN  && newDir == Direction.UP)    ||
+            (direction == Direction.LEFT  && newDir == Direction.RIGHT) ||
             (direction == Direction.RIGHT && newDir == Direction.LEFT)) {
             return;
         }
