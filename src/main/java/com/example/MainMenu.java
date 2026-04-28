@@ -27,7 +27,7 @@ public class MainMenu {
 		singleplayerButton.setOnAction(e -> app.showSinglePlayerMenu());
 
         VBox playButtons = new VBox(5, multiplayerButton, singleplayerButton);
-        playButtons.setLayoutX(50);
+        playButtons.setLayoutX(550);
         playButtons.setLayoutY(375);
 
         // -- misc -----------------------------------------------------
