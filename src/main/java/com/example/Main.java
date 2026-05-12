@@ -52,20 +52,6 @@ public class Main extends Application {
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    public void showSinglePlayerMenu() {
-        SinglePlayerMenu menu = new SinglePlayerMenu(this);
-        scene.setRoot(menu.getView());
-
-        Platform.runLater(() -> scene.getRoot().requestFocus());
-    }
-
-    public void showMultiplayerMenu() {
-        MultiplayerMenu menu = new MultiplayerMenu(this);
-        scene.setRoot(menu.getView());
-
-        Platform.runLater(() -> scene.getRoot().requestFocus());
-    }
-
     public void showGame() {
         GameScreen gameScreen = new GameScreen(this);
         scene.setRoot(gameScreen.getView());
@@ -73,12 +59,33 @@ public class Main extends Application {
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    public void showGameOver(String result) {
-        GameOverScreen over = new GameOverScreen(this, result);
-        scene.setRoot(over.getView());
+    public void showMode() {
+        ModeScreen modeScreen = new ModeScreen(this);
+        scene.setRoot(modeScreen.getView());
 
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
+
+    public void showAbout() {
+        AboutScreen abtScreen = new AboutScreen(this);
+        scene.setRoot(abtScreen.getView());
+
+        Platform.runLater(() -> scene.getRoot().requestFocus());
+    }
+
+    public void showConfig() {
+        ConfigScreen abtScreen = new ConfigScreen(this);
+        scene.setRoot(abtScreen.getView());
+
+        Platform.runLater(() -> scene.getRoot().requestFocus());
+    }
+
+    // public void showGameOver(String result) {
+    //     GameOverScreen over = new GameOverScreen(this, result);
+    //     scene.setRoot(over.getView());
+
+    //     Platform.runLater(() -> scene.getRoot().requestFocus());
+    // }
 
     // ---------------- ENTRY POINT ----------------
 

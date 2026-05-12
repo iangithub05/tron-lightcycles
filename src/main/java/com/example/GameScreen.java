@@ -35,7 +35,7 @@ public class GameScreen {
 
                 if (!game.player.alive) {
                     stop();
-                    app.showGameOver("You Crashed!");
+                    // app.showGameOver("You Crashed!");
                 }
 
                 render();
