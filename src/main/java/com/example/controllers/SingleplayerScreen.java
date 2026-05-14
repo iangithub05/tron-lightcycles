@@ -1,7 +1,8 @@
 package com.example.controllers;
 
 import com.example.Main;
-import com.example.models.GameMode;
+import com.example.models.Difficulty;
+import com.example.services.SinglePlayerSession;
 import com.example.ui.Theme;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -24,8 +25,20 @@ public class SingleplayerScreen {
         Label title = new Label("SINGLEPLAYER");
         title.getStyleClass().add("game-title");
 
-        Label subtitle = new Label("HELLO VINCE EDIT MO NALANG HEREE");
+        Label subtitle = new Label("SELECT DIFFICULTY  —  1 HUMAN  VS  3 AI");
         subtitle.getStyleClass().add("screen-subtitle");
+
+        Button easy = new Button("EASY");
+        easy.getStyleClass().add("tron-btn-secondary");
+        easy.setOnAction(e -> startGame(Difficulty.EASY));
+
+        Button medium = new Button("MEDIUM");
+        medium.getStyleClass().add("tron-btn");
+        medium.setOnAction(e -> startGame(Difficulty.MEDIUM));
+
+        Button hard = new Button("HARD");
+        hard.getStyleClass().add("tron-btn-secondary");
+        hard.setOnAction(e -> startGame(Difficulty.HARD));
 
         Button back = new Button("←  BACK");
         back.getStyleClass().add("tron-btn-secondary");
@@ -37,7 +50,11 @@ public class SingleplayerScreen {
             subtitle,
             Theme.spacer(10),
             Theme.divider(),
-            Theme.spacer(4),
+            Theme.spacer(8),
+            easy,
+            medium,
+            hard,
+            Theme.spacer(14),
             back
         );
         content.setAlignment(Pos.TOP_LEFT);
@@ -48,5 +65,9 @@ public class SingleplayerScreen {
         Theme.apply(root);
         root.getStyleClass().add("screen-root");
         return root;
+    }
+
+    private void startGame(Difficulty difficulty) {
+        app.showGame(new SinglePlayerSession(difficulty));
     }
 }
