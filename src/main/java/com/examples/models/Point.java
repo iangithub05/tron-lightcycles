@@ -1,7 +1,8 @@
 package com.example.models;
 
 public class Point {
-    public double x, y;
+    public double x;
+    public double y;
 
     public Point(double x, double y) {
         this.x = x;

@@ -1,10 +1,15 @@
 package com.example;
 
+import com.example.controllers.AskNameScreen;
 import com.example.controllers.GameOverScreen;
 import com.example.controllers.GameScreen;
-import com.example.controllers.LobbyScreen;
-import com.example.controllers.MainMenu;
-import com.example.controllers.MultiplayerGameScreen;
+import com.example.controllers.JoinLobbyScreen;
+import com.example.controllers.HostLobbyScreen;
+import com.example.controllers.MainMenuScreen;
+import com.example.controllers.MultiplayerScreen;
+import com.example.controllers.AboutScreen;
+import com.example.controllers.SingleplayerScreen;
+import com.example.models.GameMode;
 import com.example.network.GameClient;
 import com.example.network.GameServer;
 import com.example.services.GameSession;
@@ -15,94 +20,97 @@ import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class Main extends Application {
 
     private Stage stage;
     private Scene scene;
+    private String playerName = "PLAYER";
 
     @Override
     public void start(Stage stage) {
         this.stage = stage;
 
-        scene = new Scene(new Pane(), 800, 600);
+        scene = new Scene(new Pane());
 
-        // Global input handling
-        scene.addEventFilter(KeyEvent.KEY_PRESSED,  e -> InputManager.press(e.getCode()));
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> InputManager.press(e.getCode()));
         scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> InputManager.release(e.getCode()));
 
-        showMainMenu();
-
-        stage.setTitle("Tron: Light Cycles");
+        stage.setTitle("TRON: LIGHT CYCLES");
         stage.setScene(scene);
+        stage.setFullScreen(true);
+        stage.setFullScreenExitHint("");
         stage.show();
+
+        showAskName();
 
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
-    // ── Screen navigation ─────────────────────────────────────────────────
+    public void showAskName() {
+        AskNameScreen s = new AskNameScreen(this);
+        swap(s.getView());
+    }
 
     public void showMainMenu() {
-        MainMenu menu = new MainMenu(this);
-        swap(menu.getView());
+        MainMenuScreen s = new MainMenuScreen(this);
+        swap(s.getView());
     }
 
-    /** Singleplayer — brand-new game session. */
-    public void showGame() {
-        GameScreen gs = new GameScreen(this);
-        swap(gs.getView());
+    public void showSingleplayer() {
+        SingleplayerScreen s = new SingleplayerScreen(this);
+        swap(s.getView());
     }
 
-    /** Singleplayer game-over → retry reuses existing session. */
+    public void showMultiplayer() {
+        MultiplayerScreen s = new MultiplayerScreen(this);
+        swap(s.getView());
+    }
+
+    public void showHostLobby() {
+        HostLobbyScreen s = new HostLobbyScreen(this);
+        swap(s.getView());
+    }
+
+    public void showAbout() {
+        AboutScreen s = new AboutScreen(this);
+        swap(s.getView());
+    }
+
+    public void showJoinLobby() {
+        JoinLobbyScreen s = new JoinLobbyScreen(this);
+        swap(s.getView());
+    }
+
+    public void showGame(GameSession session) {
+        GameScreen s = new GameScreen(this, session);
+        swap(s.getView());
+    }
+
     public void showGameOver(String result, GameSession session) {
-        GameOverScreen over = new GameOverScreen(this, result, session);
-        swap(over.getView());
+        GameOverScreen s = new GameOverScreen(this, result, session);
+        swap(s.getView());
     }
 
-    /** Singleplayer retry. */
-    public void restartGame(GameSession session) {
-        GameScreen gs = new GameScreen(this, session);
-        swap(gs.getView());
-    }
-
-    // ── Multiplayer navigation ────────────────────────────────────────────
-
-    /** Opens the multiplayer lobby (host / join). */
-    public void showMultiplayerLobby() {
-        LobbyScreen lobby = new LobbyScreen(this);
-        swap(lobby.getView());
-    }
-
-    /** Host launches game after guest connects — server is already started. */
     public void showMultiplayerGame(GameServer server) {
-        MultiplayerGameScreen mgs = new MultiplayerGameScreen(this, server);
-        swap(mgs.getView());
     }
 
-    /** Guest launches game after connecting. */
     public void showMultiplayerGame(GameClient client) {
-        MultiplayerGameScreen mgs = new MultiplayerGameScreen(this, client);
-        swap(mgs.getView());
     }
 
-    /** Multiplayer game-over screen (simple: just show result + back to menu). */
     public void showMultiplayerGameOver(String result) {
-        // Reuse the GameOverScreen but without a retry session
-        javafx.scene.control.Label label = new javafx.scene.control.Label(result);
-        label.setTextFill(javafx.scene.paint.Color.CYAN);
-        label.setFont(javafx.scene.text.Font.font("Monospace",
-                javafx.scene.text.FontWeight.BOLD, 24));
-
-        javafx.scene.control.Button menuBtn = new javafx.scene.control.Button("Main Menu");
-        menuBtn.setOnAction(e -> showMainMenu());
-
-        javafx.scene.layout.VBox layout = new javafx.scene.layout.VBox(20, label, menuBtn);
-        layout.setAlignment(javafx.geometry.Pos.CENTER);
-        layout.setStyle("-fx-background-color: #0a0a1e;");
-        swap(layout);
+        GameOverScreen s = new GameOverScreen(this, result, null);
+        swap(s.getView());
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────
+    public String getPlayerName() {
+        return playerName;
+    }
+
+    public void setPlayerName(String name) {
+        this.playerName = name;
+    }
 
     private void swap(javafx.scene.Parent root) {
         scene.setRoot(root);
