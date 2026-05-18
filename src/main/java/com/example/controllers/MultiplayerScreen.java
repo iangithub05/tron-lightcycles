@@ -31,7 +31,9 @@ public class MultiplayerScreen {
         menuLayout.setTop(topBar);
 
         VBox menuContainer = new VBox(15);
-        menuContainer.setAlignment(Pos.CENTER_RIGHT); 
+        menuContainer.setAlignment(Pos.CENTER_RIGHT);
+        // Ensure the menu container is always aligned to the right, even if it's smaller than the screen
+        HBox.setHgrow(menuContainer, Priority.ALWAYS);
         menuContainer.setPadding(new Insets(40, 0, 40, 20));
 
         HBox hostButton = UIHelper.createMenuButton("H", "HOST A GAME", "CREATE A ROOM FOR YOUR FRIENDS", "#2a4d34", "#7fff9e");
