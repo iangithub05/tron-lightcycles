@@ -15,15 +15,15 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    private Stage  stage;
-    private Scene  scene;
+    private Stage stage;
+    private Scene scene;
     private String playerName = "PLAYER";
 
     @Override
     public void start(Stage stage) {
         this.stage = stage;
         scene = new Scene(new Pane());
-        scene.addEventFilter(KeyEvent.KEY_PRESSED,  e -> InputManager.press(e.getCode()));
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> InputManager.press(e.getCode()));
         scene.addEventFilter(KeyEvent.KEY_RELEASED, e -> InputManager.release(e.getCode()));
         stage.setTitle("TRON: LIGHT CYCLES");
         stage.setScene(scene);
@@ -31,6 +31,7 @@ public class Main extends Application {
         stage.setFullScreenExitHint("");
         stage.show();
         showAskName();
+        // showHostLobby();
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 
