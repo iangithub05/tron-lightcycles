@@ -24,7 +24,7 @@ public class SingleplayerScreen {
 
         BorderPane menuLayout = new BorderPane();
 
-        HBox topBar = UIHelper.createNavigationBar("|  HOME", "WELCOME, " + app.getPlayerName());
+        HBox topBar = UIHelper.createNavigationBar("|  SINGLEPLAYER", "WELCOME, " + app.getPlayerName());
         
         Label welcomeLabel = (Label) topBar.getChildren().get(2);
         welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
@@ -39,7 +39,7 @@ public class SingleplayerScreen {
         HBox easyButton = UIHelper.createMenuButton("E", "EASY", "", "#2a4d34", "#7fff9e");
         HBox mediumButton = UIHelper.createMenuButton("M", "MEDIUM", "", "#3d2b36", "#e099b5");
         HBox hardButton = UIHelper.createMenuButton("H", "HARD", "", "#24334d", "#8da9df");
-        HBox backButton = UIHelper.createMenuButton("B", "BACK", "", "#242336", "#7774a7");
+        HBox backButton = UIHelper.createMenuButton("B", "BACK", "RETURN TO MAIN MENU", "#242336", "#7774a7");
 
         easyButton.setOnMouseClicked(e -> startGame(Difficulty.EASY));
         mediumButton.setOnMouseClicked(e -> startGame(Difficulty.MEDIUM));
