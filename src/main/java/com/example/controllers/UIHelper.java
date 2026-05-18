@@ -75,7 +75,6 @@ public class UIHelper {
         );
         
         layout.setCursor(Cursor.HAND); 
-        // Increased translation to push the button further right (off-screen)
         layout.setTranslateX(350);
 
         Label icon = new Label(iconText);
@@ -90,12 +89,16 @@ public class UIHelper {
         Label title = new Label(titleText);
         title.setTextFill(Color.web(accentColor));
         title.setFont(Font.font(pixelFont.getFamily(), FontWeight.BOLD, 36));
+        textBlock.getChildren().add(title);
 
-        Label subtitle = new Label(subtitleText);
-        subtitle.setTextFill(Color.web(accentColor).deriveColor(0, 1, 0.8, 0.7)); 
-        subtitle.setFont(Font.font(pixelFont.getFamily(), FontWeight.NORMAL, 16));
+        // Only create and add the subtitle if the text is provided and not empty
+        if (subtitleText != null && !subtitleText.isEmpty()) {
+            Label subtitle = new Label(subtitleText);
+            subtitle.setTextFill(Color.web(accentColor).deriveColor(0, 1, 0.8, 0.7)); 
+            subtitle.setFont(Font.font(pixelFont.getFamily(), FontWeight.NORMAL, 16));
+            textBlock.getChildren().add(subtitle);
+        }
 
-        textBlock.getChildren().addAll(title, subtitle);
         layout.getChildren().addAll(icon, textBlock);
 
         TranslateTransition hoverTransition = new TranslateTransition(Duration.millis(250), layout);
