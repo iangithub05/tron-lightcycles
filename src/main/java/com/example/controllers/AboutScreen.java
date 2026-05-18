@@ -124,7 +124,7 @@ public class AboutScreen {
         backBtn.setOnAction(e -> app.showMainMenu());
 
         rightColumn.getChildren().addAll(titleMain, titleSub, instructions, backBtn);
-        splitBody.getChildren().addAll(leftColumn, rightColumn);
+        splitBody.getChildren().addAll(rightColumn, leftColumn);
         layoutFrame.setCenter(splitBody);
 
         // --- Bottom Window Navigation Footer ---
