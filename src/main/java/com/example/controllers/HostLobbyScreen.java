@@ -1,10 +1,8 @@
 package com.example.controllers;
 
 import com.example.Main;
-import com.example.models.Difficulty;
 import com.example.models.LobbySettings;
 import com.example.network.GameServer;
-import com.example.network.RoomCode;
 import com.example.ui.Theme;
 
 import javafx.application.Platform;
@@ -12,8 +10,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.TextAlignment;
 
 import java.util.List;
 
@@ -21,7 +17,7 @@ public class HostLobbyScreen {
 
     private static final int DEFAULT_PORT = 5555;
 
-    private final Main       app;
+    private final Main app;
     private final GameServer server = new GameServer();
     private final LobbySettings settings = new LobbySettings();
 
@@ -32,14 +28,12 @@ public class HostLobbyScreen {
     private VBox chatMessages;
     private ScrollPane chatScroll;
     private TextField chatInput;
-    private Label startBtn_label;
     private Button startBtn;
-    private int connectedCount = 1;
 
     private Spinner<Integer> maxPlayersSpinner;
     private Spinner<Integer> gamesToWinSpinner;
     private Spinner<Integer> timeLimitSpinner;
-    private ComboBox<String> difficultyBox;
+    private Spinner<Double> speedSpinner;
     private ComboBox<String> gridSizeBox;
 
     public HostLobbyScreen(Main app) {
@@ -47,7 +41,27 @@ public class HostLobbyScreen {
     }
 
     public StackPane getView() {
-        Label nav   = new Label("MAIN MENU  /  MULTIPLAYER  /  HOST A GAME");
+        VBox leftCol = buildPlayersColumn();
+        VBox middleCol = buildSettingsColumn();
+        VBox rightCol = buildChatColumn();
+
+        HBox root = new HBox(24, leftCol, middleCol, rightCol);
+        root.setAlignment(Pos.TOP_CENTER);
+        root.setPadding(new Insets(40));
+
+        StackPane sp = new StackPane(root);
+        sp.setAlignment(Pos.CENTER);
+        Theme.apply(sp);
+        sp.getStyleClass().add("screen-root");
+
+        setupServerCallbacks();
+        startServer();
+
+        return sp;
+    }
+
+    private VBox buildPlayersColumn() {
+        Label nav = new Label("MAIN MENU  /  MULTIPLAYER  /  HOST A GAME");
         nav.getStyleClass().add("nav-title");
 
         Label title = new Label("HOST A GAME");
@@ -64,91 +78,38 @@ public class HostLobbyScreen {
         ipLabel = new Label("starting server…");
         ipLabel.getStyleClass().add("tron-label-dim");
 
-        Button copyBtn = new Button("⎘  COPY CODE");
+        Button copyBtn = new Button("COPY CODE");
         copyBtn.getStyleClass().add("tron-btn-secondary");
         copyBtn.setStyle("-fx-pref-width: 200px; -fx-min-width: 200px;");
         copyBtn.setOnAction(e -> {
             javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
             cc.putString(roomCodeLabel.getText());
             javafx.scene.input.Clipboard.getSystemClipboard().setContent(cc);
-            copyBtn.setText("✓  COPIED!");
+            copyBtn.setText("COPIED CODE!");
             javafx.animation.PauseTransition pt = new javafx.animation.PauseTransition(
                 javafx.util.Duration.seconds(2));
-            pt.setOnFinished(ev -> copyBtn.setText("⎘  COPY CODE"));
+            pt.setOnFinished(ev -> copyBtn.setText("COPY CODE"));
             pt.play();
         });
 
         VBox codeBox = new VBox(4, roomCodeLabel, ipLabel, copyBtn);
         codeBox.setAlignment(Pos.TOP_LEFT);
         codeBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 16 20 16 20;");
+            + " -fx-border-width: 1; -fx-padding: 16 20 16 20;");
 
         statusLabel = new Label("● starting server…");
         statusLabel.getStyleClass().add("status-label");
 
-        Label settingsTitle = new Label("GAME SETTINGS");
-        settingsTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px; "
-                + "-fx-font-family: 'Courier New', monospace;");
-
-        maxPlayersSpinner = new Spinner<>(2, 4, 2);
-        gamesToWinSpinner = new Spinner<>(1, 10, 3);
-        timeLimitSpinner  = new Spinner<>(0, 600, 120, 30);
-
-        difficultyBox = new ComboBox<>();
-        difficultyBox.getItems().addAll("EASY", "MEDIUM", "HARD");
-        difficultyBox.setValue("MEDIUM");
-
-        gridSizeBox = new ComboBox<>();
-        gridSizeBox.getItems().addAll("1280 × 720", "1920 × 1080", "800 × 600");
-        gridSizeBox.setValue("1280 × 720");
-
-        styleSpinner(maxPlayersSpinner);
-        styleSpinner(gamesToWinSpinner);
-        styleSpinner(timeLimitSpinner);
-        styleCombo(difficultyBox);
-        styleCombo(gridSizeBox);
-
-        Runnable applySettings = () -> {
-            settings.maxPlayers    = maxPlayersSpinner.getValue();
-            settings.gamesToWin    = gamesToWinSpinner.getValue();
-            settings.timeLimitSecs = timeLimitSpinner.getValue();
-            settings.difficulty    = Difficulty.valueOf(difficultyBox.getValue());
-            String[] gs = gridSizeBox.getValue().replace(" ", "").split("×");
-            settings.gridWidth  = Integer.parseInt(gs[0]);
-            settings.gridHeight = Integer.parseInt(gs[1]);
-            server.updateSettings(settings);
-        };
-        maxPlayersSpinner.valueProperty().addListener((o,a,b) -> applySettings.run());
-        gamesToWinSpinner.valueProperty().addListener((o,a,b) -> applySettings.run());
-        timeLimitSpinner.valueProperty() .addListener((o,a,b) -> applySettings.run());
-        difficultyBox.setOnAction(e -> applySettings.run());
-        gridSizeBox.setOnAction(e   -> applySettings.run());
-
-        GridPane settingsGrid = new GridPane();
-        settingsGrid.setHgap(12);
-        settingsGrid.setVgap(8);
-        addSettingsRow(settingsGrid, 0, "Max players",      maxPlayersSpinner);
-        addSettingsRow(settingsGrid, 1, "Games to win",     gamesToWinSpinner);
-        addSettingsRow(settingsGrid, 2, "Time limit (sec)", timeLimitSpinner);
-        addSettingsRow(settingsGrid, 3, "Difficulty",       difficultyBox);
-        addSettingsRow(settingsGrid, 4, "Grid size",        gridSizeBox);
-
-        VBox settingsBox = new VBox(8, settingsTitle, settingsGrid);
-        settingsBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
-
         Label playersTitle = new Label("PLAYERS IN LOBBY");
-        playersTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px; "
-                + "-fx-font-family: 'Courier New', monospace;");
+        playersTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
+            + " -fx-font-family: 'Courier New', monospace;");
 
         playerList = new VBox(4);
         refreshPlayerList(List.of(app.getPlayerName()));
 
         VBox playersBox = new VBox(8, playersTitle, playerList);
         playersBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
-
-        VBox chatBox = buildChatPanel();
+            + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
 
         startBtn = new Button("WAITING FOR PLAYERS…");
         startBtn.getStyleClass().add("tron-btn");
@@ -162,87 +123,78 @@ public class HostLobbyScreen {
         back.getStyleClass().add("tron-btn-secondary");
         back.setOnAction(e -> { server.close(); app.showMultiplayer(); });
 
-        VBox left = new VBox(14,
+        VBox col = new VBox(14,
             nav, title, subtitle,
             codeBox,
             statusLabel,
-            settingsBox,
             playersBox,
             Theme.spacer(6),
             startBtn,
             Theme.divider(),
-            back
-        );
-        left.setAlignment(Pos.TOP_LEFT);
-        left.setMaxWidth(460);
-        left.setMinWidth(460);
-
-        HBox root = new HBox(24, left, chatBox);
-        root.setAlignment(Pos.TOP_CENTER);
-        root.setPadding(new Insets(40));
-
-        StackPane sp = new StackPane(root);
-        sp.setAlignment(Pos.CENTER);
-        Theme.apply(sp);
-        sp.getStyleClass().add("screen-root");
-
-        setupServerCallbacks();
-        startServer();
-
-        return sp;
+            back);
+        col.setAlignment(Pos.TOP_LEFT);
+        col.setMaxWidth(360);
+        col.setMinWidth(360);
+        return col;
     }
 
-    private void setupServerCallbacks() {
-        server.onPlayerCountChanged = count -> Platform.runLater(() -> {
-            connectedCount = count;
-            refreshPlayerList(null);
-            boolean canStart = count >= 2;
-            startBtn.setDisable(!canStart);
-            startBtn.setText(canStart
-                ? "▶  START GAME  (" + count + " players)"
-                : "WAITING FOR PLAYERS…");
-            statusLabel.setText("● " + count + " / " + settings.maxPlayers + " players");
+    private VBox buildSettingsColumn() {
+        Label settingsTitle = new Label("GAME SETTINGS");
+        settingsTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
+            + " -fx-font-family: 'Courier New', monospace;");
+
+        maxPlayersSpinner = new Spinner<>(2, 4, 2);
+        gamesToWinSpinner = new Spinner<>(1, 10, 3);
+        timeLimitSpinner = new Spinner<>(0, 600, 120, 30);
+        speedSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 10.0, 2.5, 0.5));
+
+        gridSizeBox = new ComboBox<>();
+        gridSizeBox.getItems().addAll("1280 × 720", "1920 × 1080", "800 × 600");
+        gridSizeBox.setValue("1280 × 720");
+
+        styleSpinner(maxPlayersSpinner);
+        styleSpinner(gamesToWinSpinner);
+        styleSpinner(timeLimitSpinner);
+        styleSpinner(speedSpinner);
+        styleCombo(gridSizeBox);
+
+        GridPane settingsGrid = new GridPane();
+        settingsGrid.setHgap(12);
+        settingsGrid.setVgap(8);
+        addSettingsRow(settingsGrid, 0, "Max players", maxPlayersSpinner);
+        addSettingsRow(settingsGrid, 1, "Games to win", gamesToWinSpinner);
+        addSettingsRow(settingsGrid, 2, "Time limit (sec)", timeLimitSpinner);
+        addSettingsRow(settingsGrid, 3, "Speed", speedSpinner);
+        addSettingsRow(settingsGrid, 4, "Grid size", gridSizeBox);
+
+        Button saveBtn = new Button("SAVE SETTINGS");
+        saveBtn.getStyleClass().add("tron-btn");
+        saveBtn.setOnAction(e -> {
+            settings.maxPlayers = maxPlayersSpinner.getValue();
+            settings.gamesToWin = gamesToWinSpinner.getValue();
+            settings.timeLimitSecs = timeLimitSpinner.getValue();
+            settings.speed = speedSpinner.getValue();
+            String[] gs = gridSizeBox.getValue().replace(" ", "").split("×");
+            settings.gridWidth = Integer.parseInt(gs[0]);
+            settings.gridHeight = Integer.parseInt(gs[1]);
+            server.updateSettings(settings);
         });
 
-        server.onChatMessage = (name, msg) -> Platform.runLater(() ->
-            appendChat(name, msg));
+        VBox settingsBox = new VBox(8, settingsTitle, settingsGrid, saveBtn);
+        settingsBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
+            + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
 
-        server.onPlayerDisconnected = name -> Platform.runLater(() ->
-            appendChat("SYSTEM", name + " disconnected."));
-
-        server.onError = err -> Platform.runLater(() ->
-            statusLabel.setText("✕ error: " + err));
+        VBox col = new VBox(14, settingsBox);
+        col.setAlignment(Pos.TOP_LEFT);
+        col.setMaxWidth(360);
+        col.setMinWidth(360);
+        return col;
     }
 
-    private void startServer() {
-        new Thread(() -> {
-            server.listen(DEFAULT_PORT, settings, app.getPlayerName());
-            Platform.runLater(() -> {
-                String code = server.getRoomCode();
-                String ip   = server.getLocalIp();
-                roomCodeLabel.setText(formatCode(code));
-                ipLabel.setText("your IP: " + ip + "  •  port: " + DEFAULT_PORT);
-                statusLabel.setText("● waiting for players  (1 / " + settings.maxPlayers + ")");
-            });
-        }, "server-start").start();
-    }
-
-    private void refreshPlayerList(List<String> names) {
-        playerList.getChildren().clear();
-        if (names == null) return;
-        for (int i = 0; i < names.size(); i++) {
-            Label lbl = new Label((i == 0 ? "♟  " : "♙  ") + names.get(i)
-                    + (i == 0 ? "  [HOST]" : ""));
-            lbl.setStyle("-fx-text-fill: " + (i == 0 ? "#63b3ed" : "#e2e8f0")
-                    + "; -fx-font-family: 'Courier New', monospace; -fx-font-size: 13px;");
-            playerList.getChildren().add(lbl);
-        }
-    }
-
-    private VBox buildChatPanel() {
+    private VBox buildChatColumn() {
         Label chatTitle = new Label("LOBBY CHAT");
-        chatTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px; "
-                + "-fx-font-family: 'Courier New', monospace;");
+        chatTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
+            + " -fx-font-family: 'Courier New', monospace;");
 
         chatMessages = new VBox(4);
         chatMessages.setPadding(new Insets(8));
@@ -254,9 +206,9 @@ public class HostLobbyScreen {
         chatScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
         chatInput = new TextField();
-        chatInput.setPromptText("type a message…");
+        chatInput.setPromptText("Say hello to players in your lobby...");
         chatInput.getStyleClass().add("tron-input");
-        chatInput.setStyle("-fx-pref-width: 340px; -fx-min-width: 340px;");
+        chatInput.setStyle("-fx-pref-width: 260px; -fx-min-width: 260px;");
 
         Button sendBtn = new Button("SEND");
         sendBtn.getStyleClass().add("tron-btn");
@@ -276,14 +228,61 @@ public class HostLobbyScreen {
 
         appendChat("SYSTEM", "Welcome! Share your room code for friends to join.");
 
-        VBox panel = new VBox(8, chatTitle,
-            new VBox(0, chatScroll),
-            inputRow);
+        VBox panel = new VBox(8, chatTitle, new VBox(0, chatScroll), inputRow);
         panel.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
+            + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
         panel.setMinWidth(340);
         panel.setMaxWidth(340);
-        return panel;
+
+        VBox col = new VBox(14, panel);
+        col.setAlignment(Pos.TOP_LEFT);
+        return col;
+    }
+
+    private void setupServerCallbacks() {
+        server.onPlayerCountChanged = count -> Platform.runLater(() -> {
+            refreshPlayerList(server.getPlayerNames());
+            boolean canStart = count >= 2;
+            startBtn.setDisable(!canStart);
+            startBtn.setText(canStart
+                ? "START GAME  (" + count + " players)"
+                : "WAITING FOR PLAYERS…");
+            statusLabel.setText("● " + count + " / " + settings.maxPlayers + " players");
+        });
+
+        server.onChatMessage = (name, msg) -> Platform.runLater(() ->
+            appendChat(name, msg));
+
+        server.onPlayerDisconnected = name -> Platform.runLater(() ->
+            appendChat("SYSTEM", name + " disconnected."));
+
+        server.onError = err -> Platform.runLater(() ->
+            statusLabel.setText("error: " + err));
+    }
+
+    private void startServer() {
+        new Thread(() -> {
+            server.listen(DEFAULT_PORT, settings, app.getPlayerName());
+            Platform.runLater(() -> {
+                String code = server.getRoomCode();
+                String ip = server.getLocalIp();
+                roomCodeLabel.setText(formatCode(code));
+                ipLabel.setText("Your IP: " + ip + "  •  port: " + DEFAULT_PORT);
+                statusLabel.setText("● Waiting for players  (1 / " + settings.maxPlayers + ")");
+            });
+        }, "server-start").start();
+    }
+
+    private void refreshPlayerList(List<String> names) {
+        playerList.getChildren().clear();
+        if (names == null) return;
+        for (int i = 0; i < names.size(); i++) {
+            Label lbl = new Label((i == 0 ? "♟  " : "♙  ") + names.get(i)
+                + (i == 0 ? "  [HOST]" : ""));
+            lbl.setStyle("-fx-text-fill: " + (i == 0 ? "#63b3ed" : "#e2e8f0")
+                + "; -fx-font-family: 'Courier New', monospace; -fx-font-size: 13px;");
+            playerList.getChildren().add(lbl);
+        }
     }
 
     private void appendChat(String name, String msg) {
@@ -291,7 +290,7 @@ public class HostLobbyScreen {
         lbl.setWrapText(true);
         lbl.setMaxWidth(300);
         lbl.setStyle("-fx-text-fill: " + ("SYSTEM".equals(name) ? "#718096" : "#e2e8f0")
-                + "; -fx-font-family: 'Courier New', monospace; -fx-font-size: 12px;");
+            + "; -fx-font-family: 'Courier New', monospace; -fx-font-size: 12px;");
         chatMessages.getChildren().add(lbl);
         chatScroll.layout();
         chatScroll.setVvalue(1.0);
@@ -300,23 +299,23 @@ public class HostLobbyScreen {
     private static void addSettingsRow(GridPane grid, int row, String label, Control ctrl) {
         Label lbl = new Label(label);
         lbl.setStyle("-fx-text-fill: #a0aec0; -fx-font-family: 'Courier New', monospace;"
-                + " -fx-font-size: 13px; -fx-pref-width: 160px;");
+            + " -fx-font-size: 13px; -fx-pref-width: 160px;");
         grid.add(lbl, 0, row);
         grid.add(ctrl, 1, row);
     }
 
     private static void styleSpinner(Spinner<?> sp) {
         sp.setStyle("-fx-background-color: #1a1a2e; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-pref-width: 100px;");
+            + " -fx-border-width: 1; -fx-pref-width: 100px;");
         sp.getEditor().setStyle("-fx-background-color: #1a1a2e; -fx-text-fill: #e2e8f0;"
-                + " -fx-font-family: 'Courier New', monospace;");
+            + " -fx-font-family: 'Courier New', monospace;");
         sp.setEditable(true);
     }
 
     private static void styleCombo(ComboBox<?> cb) {
         cb.setStyle("-fx-background-color: #1a1a2e; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-text-fill: #e2e8f0;"
-                + " -fx-font-family: 'Courier New', monospace; -fx-pref-width: 160px;");
+            + " -fx-border-width: 1; -fx-text-fill: #e2e8f0;"
+            + " -fx-font-family: 'Courier New', monospace; -fx-pref-width: 160px;");
     }
 
     private static String formatCode(String code) {

@@ -13,50 +13,55 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 public class GameServer {
-    public Consumer<Integer> onPlayerCountChanged;
-    public BiConsumer<String,String> onChatMessage;
-    public Consumer<String> onPlayerDisconnected;
-    public Consumer<String> onError;
-    public BiConsumer<Integer,int[]> onRoundOver;
-    public Consumer<Integer> onMatchOver;
+
+    public Consumer<Integer>          onPlayerCountChanged;
+    public BiConsumer<String, String> onChatMessage;
+    public Consumer<String>           onPlayerDisconnected;
+    public Consumer<String>           onError;
+    public BiConsumer<Integer, int[]> onRoundOver;
+    public Consumer<Integer>          onMatchOver;
+
     private LobbySettings settings;
     private Game           game;
     private int[]          matchScores;
 
-    private ServerSocket           serverSocket;
-    private final List<ClientConn> clients    = new CopyOnWriteArrayList<>();
-    private final List<String>     playerNames = new CopyOnWriteArrayList<>();
+    private ServerSocket            serverSocket;
+    private final List<ClientConn>  clients      = new CopyOnWriteArrayList<>();
+    private final List<String>      playerNames  = new CopyOnWriteArrayList<>();
 
     private LanDiscovery discovery;
-    private String       roomCode;
-    private String       hostName;
+    private String        roomCode;
+    private String        hostName;
 
-    private Timer        gameTimer;
-    private boolean      gameRunning;
+    private Timer   gameTimer;
+    private boolean gameRunning;
+
+    private volatile Direction hostDir = null;
+
 
     private class ClientConn {
-        final int    slot;
-        final Socket socket;
-        final BufferedReader  in;
-        final PrintWriter     out;
-        Direction pendingDir;
+        final int          slot;
+        final Socket       socket;
+        final BufferedReader in;
+        final PrintWriter    out;
+        volatile Direction   pendingDir;
 
         ClientConn(int slot, Socket socket) throws IOException {
             this.slot   = slot;
             this.socket = socket;
-            this.in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out    = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+            this.in     = new BufferedReader(
+                              new InputStreamReader(socket.getInputStream()));
+            this.out    = new PrintWriter(
+                              new OutputStreamWriter(socket.getOutputStream()), true);
         }
 
-        void send(String msg) {
-            out.println(msg);
-        }
+        void send(String msg) { out.println(msg); }
     }
 
 
     public void listen(int port, LobbySettings settings, String hostName) {
-        this.settings  = settings;
-        this.hostName  = hostName;
+        this.settings    = settings;
+        this.hostName    = hostName;
         this.matchScores = new int[settings.maxPlayers];
 
         playerNames.add(hostName);
@@ -71,25 +76,25 @@ public class GameServer {
                 while (!serverSocket.isClosed()) {
                     Socket s = serverSocket.accept();
                     int slot = clients.size() + 1;
-                    if (slot >= settings.maxPlayers) {
-                        s.close();
-                        continue;
-                    }
+                    if (slot >= settings.maxPlayers) { s.close(); continue; }
                     ClientConn conn = new ClientConn(slot, s);
                     clients.add(conn);
                     startClientReader(conn);
                 }
             } catch (IOException e) {
-                if (!serverSocket.isClosed())
-                    if (onError != null) onError.accept(e.getMessage());
+                if (!serverSocket.isClosed() && onError != null)
+                    onError.accept(e.getMessage());
             }
         }, "server-accept");
         acceptThread.setDaemon(true);
         acceptThread.start();
     }
 
-    public String getRoomCode() { return roomCode; }
-    public String getLocalIp() { return RoomCode.getLocalIp(); }
+    public String getRoomCode()  { return roomCode; }
+    public String getLocalIp()   { return RoomCode.getLocalIp(); }
+    public Game   getGame()      { return game; }
+    public LobbySettings getSettings() { return settings; }
+    public List<String> getPlayerNames() { return new ArrayList<>(playerNames); }
 
     public void updateSettings(LobbySettings s) {
         this.settings = s;
@@ -107,15 +112,11 @@ public class GameServer {
     public void startGame() {
         buildGame();
         broadcast(NetworkMessage.make(NetworkMessage.START));
-        discovery.stopResponder();
+        if (discovery != null) discovery.stopResponder();
         beginGameLoop();
     }
 
-    public void queueHostDirection(Direction dir) {
-        hostDir = dir;
-    }
-
-    private volatile Direction hostDir = null;
+    public void queueHostDirection(Direction dir) { hostDir = dir; }
 
     public void close() {
         gameRunning = false;
@@ -124,9 +125,6 @@ public class GameServer {
         for (ClientConn c : clients) closeConn(c);
         try { if (serverSocket != null) serverSocket.close(); } catch (IOException ignored) {}
     }
-
-    public Game       getGame() { return game; }
-    public LobbySettings getSettings() { return settings; }
 
 
     private void startClientReader(ClientConn conn) {
@@ -163,9 +161,8 @@ public class GameServer {
             }
             case NetworkMessage.INPUT -> {
                 if (parts.length > 1) {
-                    try {
-                        conn.pendingDir = Direction.valueOf(parts[1]);
-                    } catch (Exception ignored) {}
+                    try { conn.pendingDir = Direction.valueOf(parts[1]); }
+                    catch (Exception ignored) {}
                 }
             }
             case NetworkMessage.CHAT -> {
@@ -190,60 +187,81 @@ public class GameServer {
             onPlayerCountChanged.accept(clients.size() + 1);
     }
 
+
     private void buildGame() {
         game = new Game(settings.toGameRules());
+
         double[][] startPos = {
- {80, 80}, {settings.gridWidth - 80, 80},
- {settings.gridWidth - 80, settings.gridHeight - 80}, {80, settings.gridHeight - 80}
+            {80,                        80},
+            {settings.gridWidth - 80,   80},
+            {settings.gridWidth - 80,   settings.gridHeight - 80},
+            {80,                        settings.gridHeight - 80}
         };
-        com.example.models.Direction[] startDir = {
-            Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP
+        Direction[] startDir = {
+            Direction.RIGHT, Direction.DOWN,
+            Direction.LEFT,  Direction.UP
         };
+
         int total = clients.size() + 1;
         for (int i = 0; i < total; i++) {
             game.addPlayer(new Player(startPos[i][0], startPos[i][1],
-                                      startDir[i], settings.toGameRules().playerSpeed));
+                                      startDir[i],
+                                      settings.toGameRules().playerSpeed));
         }
     }
 
     private void beginGameLoop() {
         gameRunning = true;
-        long tickMs  = 16;
         gameTimer = new Timer("game-loop", true);
         gameTimer.scheduleAtFixedRate(new TimerTask() {
             @Override public void run() {
                 if (!gameRunning) { cancel(); return; }
+
                 readInputs();
                 game.update();
                 broadcastState();
+
                 if (game.isOver()) {
                     gameRunning = false;
                     cancel();
-                    Player winner = game.getWinner();
-                    int winSlot = winner != null ? game.players.indexOf(winner) : -1;
+
+                    Player winner  = game.getWinner();
+                    int    winSlot = (winner != null)
+                            ? game.players.indexOf(winner) : -1;
                     if (winSlot >= 0) matchScores[winSlot]++;
+
                     broadcast(NetworkMessage.make(NetworkMessage.ROUND_OVER,
                             String.valueOf(winSlot), scoresString()));
-                    if (onRoundOver != null) onRoundOver.accept(winSlot, matchScores.clone());
+                    if (onRoundOver != null)
+                        onRoundOver.accept(winSlot, matchScores.clone());
 
                     if (winSlot >= 0 && matchScores[winSlot] >= settings.gamesToWin) {
-                        broadcast(NetworkMessage.make(NetworkMessage.MATCH_OVER,
-                                String.valueOf(winSlot)));
+                        broadcast(NetworkMessage.make(
+                                NetworkMessage.MATCH_OVER, String.valueOf(winSlot)));
                         if (onMatchOver != null) onMatchOver.accept(winSlot);
+                    } else {
+                        new Timer("round-restart", true).schedule(new TimerTask() {
+                            @Override public void run() {
+                                buildGame();
+                                beginGameLoop();
+                            }
+                        }, 2500);
                     }
                 }
             }
-        }, 0, tickMs);
+        }, 0, 16);
     }
 
     private void readInputs() {
-        if (hostDir != null && !game.players.isEmpty()) {
-            game.players.get(0).setDirection(hostDir);
+        Direction d = hostDir;
+        if (d != null && !game.players.isEmpty()) {
+            game.players.get(0).setDirection(d);
             hostDir = null;
         }
         for (ClientConn c : clients) {
-            if (c.pendingDir != null && c.slot < game.players.size()) {
-                game.players.get(c.slot).setDirection(c.pendingDir);
+            Direction cd = c.pendingDir;
+            if (cd != null && c.slot < game.players.size()) {
+                game.players.get(c.slot).setDirection(cd);
                 c.pendingDir = null;
             }
         }
@@ -251,23 +269,27 @@ public class GameServer {
 
     private void broadcastState() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < game.players.size(); i++) {
+        List<Player> players = game.players;
+        for (int i = 0; i < players.size(); i++) {
             if (i > 0) sb.append(';');
-            Player p = game.players.get(i);
-            var snap = new NetworkMessage.PlayerSnapshot();
-            snap.slot = i;
-            snap.x = p.x; snap.y = p.y; snap.alive = p.alive;
-            snap.trailPoints = new ArrayList<>();
+            Player p = players.get(i);
+
+            List<double[]> pts = new ArrayList<>();
             for (Point pt : p.trail.points)
-                snap.trailPoints.add(new double[]{pt.x, pt.y});
+                pts.add(new double[]{pt.x, pt.y});
+
+            NetworkMessage.PlayerSnapshot snap =
+                    new NetworkMessage.PlayerSnapshot(i, p.x, p.y, p.alive, pts);
             sb.append(snap.encode());
         }
         broadcast(NetworkMessage.make(NetworkMessage.STATE, sb.toString()));
     }
 
     private void broadcastLobbyState() {
+        List<String> filled = new ArrayList<>();
+        for (String n : playerNames) if (n != null && !n.isEmpty()) filled.add(n);
         broadcast(NetworkMessage.make(NetworkMessage.LOBBY_STATE,
-                String.join(",", playerNames)));
+                String.join(",", filled)));
     }
 
     private void broadcast(String msg) {
