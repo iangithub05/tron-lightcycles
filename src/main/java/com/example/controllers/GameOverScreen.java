@@ -25,7 +25,7 @@ public class GameOverScreen {
     public StackPane getView() {
         // --- Main Screen Canvas Base Layer ---
         StackPane root = new StackPane();
-        root.setBackground(UIHelper.createBackground("/images/background_1.png"));
+        root.setBackground(UIHelper.createBackground("/images/background_4.png"));
 
         BorderPane layoutStructure = new BorderPane();
 
