@@ -57,10 +57,16 @@ public class GameEngine {
 
                 if (!running) {
                     stop();
+                    Player human  = session.game.players.get(0);
                     Player winner = session.game.getWinner();
-                    String result = winner != null
-                        ? (session.game.players.indexOf(winner) == 0 ? "YOU WIN" : "YOU LOSE")
-                        : "DRAW";
+                    String result;
+                    if (!human.alive) {
+                        result = "YOU LOSE";
+                    } else if (winner == human) {
+                        result = "YOU WIN";
+                    } else {
+                        result = "DRAW";
+                    }
                     app.showGameOver(result, session);
                 }
             }
