@@ -17,24 +17,27 @@ import java.util.List;
 
 public class JoinLobbyScreen {
 
-    private final Main       app;
+    private final Main app;
     private final GameClient client  = new GameClient();
-    private final String     myName;
+    private final String myName;
 
     private LobbySettings currentSettings;
 
-    private Label      roomCodeLabel;
-    private Label      hostInfoLabel;
-    private Label      statusLabel;
-    private VBox       playerList;
-    private VBox       chatMessages;
-    private ScrollPane chatScroll;
-    private TextField  chatInput;
+    private volatile List<String> pendingLobbyNames;
+    private volatile LobbySettings pendingLobbySettings;
 
-    private StackPane  rootPane;
+    private Label roomCodeLabel;
+    private Label hostInfoLabel;
+    private Label statusLabel;
+    private VBox playerList;
+    private VBox chatMessages;
+    private ScrollPane chatScroll;
+    private TextField chatInput;
+
+    private StackPane rootPane;
 
     public JoinLobbyScreen(Main app) {
-        this.app    = app;
+        this.app = app;
         this.myName = app.getPlayerName();
     }
 
@@ -58,7 +61,6 @@ public class JoinLobbyScreen {
         Label subtitle = new Label("enter a room code or auto-discover on LAN");
         subtitle.getStyleClass().add("screen-subtitle");
 
-        // ── room code input ──────────────────────────────────────────────────
         Label codeLabel = new Label("Room Code");
         codeLabel.getStyleClass().add("tron-label");
 
@@ -128,6 +130,16 @@ public class JoinLobbyScreen {
 
                 client.onConnected = slot -> Platform.runLater(() ->
                     showLobbyView(raw, ip, port));
+                client.onLobbyUpdate = (names, settings) -> {
+                    pendingLobbyNames = names;
+                    pendingLobbySettings = settings;
+                    Platform.runLater(() -> {
+                        if (playerList != null) {
+                            currentSettings = settings;
+                            refreshPlayerList(names);
+                        }
+                    });
+                };
                 client.onError = err -> Platform.runLater(() -> {
                     connectStatus.setText("✕ " + err);
                     connectBtn.setDisable(false);
@@ -203,11 +215,11 @@ public class JoinLobbyScreen {
         GridPane settingsGrid = new GridPane();
         settingsGrid.setHgap(12);
         settingsGrid.setVgap(8);
-        addReadOnlyRow(settingsGrid, 0, "Max players",      "…");
-        addReadOnlyRow(settingsGrid, 1, "Games to win",     "…");
+        addReadOnlyRow(settingsGrid, 0, "Max players", "…");
+        addReadOnlyRow(settingsGrid, 1, "Games to win", "…");
         addReadOnlyRow(settingsGrid, 2, "Time limit (sec)", "…");
-        addReadOnlyRow(settingsGrid, 3, "Difficulty",       "…");
-        addReadOnlyRow(settingsGrid, 4, "Grid size",        "…");
+        addReadOnlyRow(settingsGrid, 3, "Speed", "…");
+        addReadOnlyRow(settingsGrid, 4, "Grid size", "…");
 
         VBox settingsBox = new VBox(8, settingsTitle, settingsGrid);
         settingsBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
@@ -264,6 +276,12 @@ public class JoinLobbyScreen {
             refreshSettingsGrid(settingsGrid, settings);
         });
 
+        if (pendingLobbyNames != null && pendingLobbySettings != null) {
+            currentSettings = pendingLobbySettings;
+            refreshPlayerList(pendingLobbyNames);
+            refreshSettingsGrid(settingsGrid, pendingLobbySettings);
+        }
+
         client.onSettingsChanged = settings -> Platform.runLater(() -> {
             currentSettings = settings;
             refreshSettingsGrid(settingsGrid, settings);
@@ -318,7 +336,6 @@ public class JoinLobbyScreen {
             playerList.getChildren().add(row);
         }
 
-        // empty slots
         int maxP = currentSettings != null ? currentSettings.maxPlayers : 4;
         for (int i = names.size(); i < maxP; i++) {
             HBox row = new HBox(10);
@@ -356,7 +373,7 @@ public class JoinLobbyScreen {
         HBox valRow = new HBox(6, v, lock);
         valRow.setAlignment(Pos.CENTER_LEFT);
 
-        grid.add(k,      0, row);
+        grid.add(k, 0, row);
         grid.add(valRow, 1, row);
     }
 
@@ -365,7 +382,7 @@ public class JoinLobbyScreen {
             String.valueOf(s.maxPlayers),
             String.valueOf(s.gamesToWin),
             s.timeLimitSecs == 0 ? "no limit" : s.timeLimitSecs + "s",
-            s.difficulty.name(),
+            String.valueOf(s.speed),
             s.gridWidth + " × " + s.gridHeight
         };
         for (int i = 0; i < values.length; i++) {

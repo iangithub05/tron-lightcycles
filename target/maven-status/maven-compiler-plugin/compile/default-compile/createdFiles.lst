@@ -14,7 +14,6 @@ com/example/controllers/AskNameScreen.class
 com/example/network/GameServer$1.class
 com/example/controllers/MultiplayerScreen.class
 com/example/network/LanDiscovery.class
-com/example/models/LobbySettings$1.class
 com/example/services/AvoidDeathAIController.class
 com/example/models/Player$1.class
 com/example/controllers/JoinLobbyScreen.class
@@ -44,3 +43,4 @@ com/example/controllers/MainMenuScreen.class
 com/example/models/Player.class
 com/example/network/LanDiscovery$DiscoveredGame.class
 com/example/models/GameRules.class
+com/example/network/GameServer$1$1.class
