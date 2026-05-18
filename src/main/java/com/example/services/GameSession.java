@@ -14,10 +14,10 @@ public class GameSession {
     public Game game;
 
     private static final double[][] START_POSITIONS = {
-        {80, 80},
-        {1200, 80},
-        {1200, 640},
-        {80, 640}
+ {80, 80},
+ {1200, 80},
+ {1200, 640},
+ {80, 640}
     };
 
     private static final Direction[] START_DIRECTIONS = {

@@ -155,3 +155,56 @@
     -fx-background-radius: 2px;
     -fx-padding: 2 6 2 6;
 }
+
+.spinner .text-field {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #2d3748;
+    -fx-border-color: #4a5568;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #4a5568;
+}
+
+.combo-box {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2d3748;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #2d3748;
+    -fx-text-fill: #63b3ed;
+}
+
+.scroll-pane {
+    -fx-background-color: #0d1117;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: #0d1117;
+}
