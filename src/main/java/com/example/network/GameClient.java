@@ -2,6 +2,7 @@ package com.example.network;
 
 import com.example.models.Direction;
 import com.example.models.LobbySettings;
+import com.example.models.PlayerSnapshot;
 
 import java.io.*;
 import java.net.Socket;
@@ -16,7 +17,7 @@ public class GameClient {
     public Consumer<LobbySettings> onSettingsChanged;
     public BiConsumer<String,String> onChatMessage;
     public Runnable onGameStart;
-    public Consumer<List<NetworkMessage.PlayerSnapshot>> onStateUpdate;
+    public Consumer<List<PlayerSnapshot>> onStateUpdate;
     public BiConsumer<Integer,int[]> onRoundOver;
     public Consumer<Integer> onMatchOver;
     public Consumer<String> onPlayerDisconnected;
@@ -92,10 +93,7 @@ public class GameClient {
             }
             case NetworkMessage.STATE -> {
                 if (parts.length < 2 || onStateUpdate == null) break;
-                List<NetworkMessage.PlayerSnapshot> snaps = new java.util.ArrayList<>();
-                for (String enc : parts[1].split(";")) {
-                    if (!enc.isEmpty()) snaps.add(NetworkMessage.PlayerSnapshot.decode(enc));
-                }
+                List<PlayerSnapshot> snaps = NetworkMessage.decodeSnapshots(parts[1]);
                 onStateUpdate.accept(snaps);
             }
             case NetworkMessage.ROUND_OVER -> {

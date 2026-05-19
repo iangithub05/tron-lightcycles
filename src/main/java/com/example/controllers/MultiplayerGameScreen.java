@@ -3,11 +3,11 @@ package com.example.controllers;
 import com.example.Main;
 import com.example.models.Direction;
 import com.example.models.LobbySettings;
-import com.example.models.Player;
-import com.example.models.Point;
 import com.example.network.GameClient;
 import com.example.network.GameServer;
 import com.example.network.NetworkMessage;
+import com.example.models.GameSnapshot;
+import com.example.models.PlayerSnapshot;
 import com.example.ui.Theme;
 
 import javafx.animation.AnimationTimer;
@@ -55,8 +55,9 @@ public class MultiplayerGameScreen {
     private Label roleLabel;
 
     private final Map<Integer, List<double[]>> pendingClientTrailPoints = new HashMap<>();
-    private final Map<Integer, NetworkMessage.PlayerSnapshot> latestHeads = new HashMap<>();
-    private volatile List<NetworkMessage.PlayerSnapshot> queuedClientSnapshots;
+    private final Map<Integer, double[]> lastDrawnTrailPoint = new HashMap<>();
+    private final Map<Integer, PlayerSnapshot> latestHeads = new HashMap<>();
+    private volatile List<PlayerSnapshot> queuedClientSnapshots;
     private int[] serverTrailDrawCount;
     private String lastSidebarSignature = "";
 
@@ -195,13 +196,13 @@ public class MultiplayerGameScreen {
         renderLoop.start();
     }
 
-    private void applyClientSnapshots(List<NetworkMessage.PlayerSnapshot> snaps) {
+    private void applyClientSnapshots(List<PlayerSnapshot> snaps) {
         if (roundTransitioning) return;
 
         int aliveCount = 0;
-        NetworkMessage.PlayerSnapshot local = null;
+        PlayerSnapshot local = null;
 
-        for (NetworkMessage.PlayerSnapshot s : snaps) {
+        for (PlayerSnapshot s : snaps) {
             latestHeads.put(s.slot, s);
             if (s.alive) aliveCount++;
             if (s.slot == mySlot) local = s;
@@ -221,16 +222,15 @@ public class MultiplayerGameScreen {
             drawMultiplayerOverlay();
             return;
         }
-        if (server.getGame() == null) return;
 
         int playerCount = server.getGamePlayerCount();
         if (playerCount <= 0) return;
         ensureServerTrailDrawCount(playerCount);
 
-        List<NetworkMessage.PlayerSnapshot> snaps = server.getRenderSnapshots(serverTrailDrawCount);
-        if (snaps.isEmpty()) return;
+        GameSnapshot snapshot = server.getRenderSnapshot(serverTrailDrawCount);
+        if (snapshot == null || snapshot.players == null || snapshot.players.isEmpty()) return;
 
-        for (NetworkMessage.PlayerSnapshot s : snaps) {
+        for (PlayerSnapshot s : snapshot.players) {
             if (s.trailPoints != null && !s.trailPoints.isEmpty()) {
                 pendingClientTrailPoints.computeIfAbsent(s.slot, k -> new ArrayList<>()).addAll(s.trailPoints);
             }
@@ -239,8 +239,8 @@ public class MultiplayerGameScreen {
 
         clearDynamicCanvas();
         int aliveCount = 0;
-        NetworkMessage.PlayerSnapshot local = null;
-        for (NetworkMessage.PlayerSnapshot s : snaps) {
+        PlayerSnapshot local = null;
+        for (PlayerSnapshot s : snapshot.players) {
             if (s.alive) {
                 aliveCount++;
                 drawHead(s.x, s.y, PLAYER_COLORS[s.slot % PLAYER_COLORS.length]);
@@ -248,8 +248,8 @@ public class MultiplayerGameScreen {
             if (s.slot == mySlot) local = s;
         }
 
-        refreshSidebar(snaps, null);
-        if (local != null) updateLocalLifeState(local.alive, snaps.size(), aliveCount);
+        refreshSidebar(snapshot.players, null);
+        if (local != null) updateLocalLifeState(local.alive, snapshot.players.size(), aliveCount);
         drawMultiplayerOverlay();
     }
 
@@ -260,7 +260,7 @@ public class MultiplayerGameScreen {
             return;
         }
 
-        List<NetworkMessage.PlayerSnapshot> snaps = queuedClientSnapshots;
+        List<PlayerSnapshot> snaps = queuedClientSnapshots;
         if (snaps != null) {
             queuedClientSnapshots = null;
             applyClientSnapshots(snaps);
@@ -271,22 +271,21 @@ public class MultiplayerGameScreen {
         drawPendingClientTrailPoints();
         clearDynamicCanvas();
 
-        for (Map.Entry<Integer, NetworkMessage.PlayerSnapshot> entry : latestHeads.entrySet()) {
+        for (Map.Entry<Integer, PlayerSnapshot> entry : latestHeads.entrySet()) {
             int slot = entry.getKey();
-            NetworkMessage.PlayerSnapshot s = entry.getValue();
+            PlayerSnapshot s = entry.getValue();
             if (s.alive) drawHead(s.x, s.y, PLAYER_COLORS[slot % PLAYER_COLORS.length]);
         }
 
         drawMultiplayerOverlay();
     }
 
-    private void refreshSidebar(List<NetworkMessage.PlayerSnapshot> snaps, List<Player> players) {
+    private void refreshSidebar(List<PlayerSnapshot> snaps, List<?> unusedPlayers) {
         if (scoreBox == null || playerBox == null) return;
 
         int playerCount = 0;
         if (scores != null) playerCount = scores.length;
         else if (snaps != null) playerCount = snaps.size();
-        else if (players != null) playerCount = players.size();
         else playerCount = settings.maxPlayers;
 
         StringBuilder signature = new StringBuilder();
@@ -294,15 +293,21 @@ public class MultiplayerGameScreen {
         for (int i = 0; i < playerCount; i++) {
             int score = scores != null && i < scores.length ? scores[i] : 0;
             boolean alive = true;
+            String name = "P" + (i + 1);
+
             if (snaps != null) {
                 alive = false;
-                for (NetworkMessage.PlayerSnapshot snap : snaps) {
-                    if (snap.slot == i) { alive = snap.alive; break; }
+                for (PlayerSnapshot snap : snaps) {
+                    if (snap.slot == i) {
+                        alive = snap.alive;
+                        score = snap.score;
+                        if (snap.name != null && !snap.name.isBlank()) name = snap.name;
+                        break;
+                    }
                 }
-            } else if (players != null && i < players.size()) {
-                alive = players.get(i).alive;
             }
-            signature.append(i).append(':').append(score).append(':').append(alive ? '1' : '0').append(';');
+            signature.append(i).append(':').append(score).append(':')
+                    .append(alive ? '1' : '0').append(':').append(name).append(';');
         }
 
         String sig = signature.toString();
@@ -312,22 +317,30 @@ public class MultiplayerGameScreen {
         scoreBox.getChildren().clear();
         for (int i = 0; i < playerCount; i++) {
             int score = scores != null && i < scores.length ? scores[i] : 0;
+            if (snaps != null) {
+                for (PlayerSnapshot snap : snaps) {
+                    if (snap.slot == i) { score = snap.score; break; }
+                }
+            }
             scoreBox.getChildren().add(colorRow("P" + (i + 1), score + " / " + settings.gamesToWin, i, i == mySlot));
         }
 
         playerBox.getChildren().clear();
         for (int i = 0; i < playerCount; i++) {
             boolean alive = true;
+            String name = "P" + (i + 1);
             if (snaps != null) {
                 alive = false;
-                for (NetworkMessage.PlayerSnapshot snap : snaps) {
-                    if (snap.slot == i) { alive = snap.alive; break; }
+                for (PlayerSnapshot snap : snaps) {
+                    if (snap.slot == i) {
+                        alive = snap.alive;
+                        if (snap.name != null && !snap.name.isBlank()) name = snap.name;
+                        break;
+                    }
                 }
-            } else if (players != null && i < players.size()) {
-                alive = players.get(i).alive;
             }
             String status = alive ? "ALIVE" : "DEAD";
-            playerBox.getChildren().add(colorRow("P" + (i + 1), status + (i == mySlot ? "  YOU" : ""), i, i == mySlot));
+            playerBox.getChildren().add(colorRow(name, status + (i == mySlot ? "  YOU" : ""), i, i == mySlot));
         }
     }
 
@@ -348,20 +361,8 @@ public class MultiplayerGameScreen {
     private void ensureServerTrailDrawCount(int playerCount) {
         if (serverTrailDrawCount != null && serverTrailDrawCount.length == playerCount) return;
         serverTrailDrawCount = new int[playerCount];
+        lastDrawnTrailPoint.clear();
         clearTrailCanvas();
-    }
-
-    private void drawNewServerTrailPoints(List<Player> players) {
-        for (int i = 0; i < players.size(); i++) {
-            Player p = players.get(i);
-            Color c = PLAYER_COLORS[i % PLAYER_COLORS.length];
-            int from = Math.min(serverTrailDrawCount[i], p.trail.points.size());
-            for (int j = from; j < p.trail.points.size(); j++) {
-                Point pt = p.trail.points.get(j);
-                drawTrailPoint(trailGc, pt.x, pt.y, c);
-            }
-            serverTrailDrawCount[i] = p.trail.points.size();
-        }
     }
 
     private void drawPendingClientTrailPoints() {
@@ -369,7 +370,14 @@ public class MultiplayerGameScreen {
             int slot = entry.getKey();
             Color c = PLAYER_COLORS[slot % PLAYER_COLORS.length];
             List<double[]> pts = entry.getValue();
-            for (double[] pt : pts) drawTrailPoint(trailGc, pt[0], pt[1], c);
+            double[] previous = lastDrawnTrailPoint.get(slot);
+
+            for (double[] current : pts) {
+                drawTrailSegment(trailGc, previous, current, c);
+                previous = current;
+            }
+
+            if (previous != null) lastDrawnTrailPoint.put(slot, previous);
             pts.clear();
         }
     }
@@ -411,9 +419,26 @@ public class MultiplayerGameScreen {
         gc.fillText(subtitle, w / 2.0, h / 2.0 + 38);
     }
 
-    private void drawTrailPoint(GraphicsContext targetGc, double x, double y, Color c) {
-        targetGc.setFill(c.deriveColor(0, 1, 0.6, 0.8));
-        targetGc.fillRect(x - 1, y - 1, 4, 4);
+    private void drawTrailSegment(GraphicsContext targetGc, double[] previous, double[] current, Color c) {
+        if (current == null) return;
+
+        targetGc.setStroke(c.deriveColor(0, 1, 0.78, 0.88));
+        targetGc.setLineWidth(5);
+        targetGc.setLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+
+        if (previous == null || distanceSquared(previous, current) > 90_000) {
+            // First point for this player, or a new round/spawn jump.
+            targetGc.setFill(c.deriveColor(0, 1, 0.78, 0.88));
+            targetGc.fillOval(current[0] - 2.5, current[1] - 2.5, 5, 5);
+        } else {
+            targetGc.strokeLine(previous[0], previous[1], current[0], current[1]);
+        }
+    }
+
+    private double distanceSquared(double[] a, double[] b) {
+        double dx = a[0] - b[0];
+        double dy = a[1] - b[1];
+        return dx * dx + dy * dy;
     }
 
     private void drawHead(double x, double y, Color c) {
@@ -498,6 +523,7 @@ public class MultiplayerGameScreen {
         roundTransitioning = false;
         splashVisible = false;
         pendingClientTrailPoints.clear();
+        lastDrawnTrailPoint.clear();
         latestHeads.clear();
         serverTrailDrawCount = null;
         lastSidebarSignature = "";
