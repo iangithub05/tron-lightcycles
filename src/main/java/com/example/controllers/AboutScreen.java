@@ -1,6 +1,7 @@
 package com.example.controllers;
 
 import com.example.Main;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -27,17 +28,13 @@ public class AboutScreen {
         BorderPane layoutFrame = new BorderPane();
 
         // --- Top Header Panel ---
-        HBox topBar = UIHelper.createNavigationBar("I  ABOUT", "Welcome, " + app.getPlayerName());
+        HBox topBar = UIHelper.createNavigationBar("|  ABOUT", "WELCOME, " + app.getPlayerName());
         
-        // Re-styling the generated welcome name token element into a clean maroon pill capsule
+        // Target and custom-style the injected right-side player welcome element from UIHelper
         Label welcomeLabel = (Label) topBar.getChildren().get(2);
         welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
-        welcomeLabel.setStyle(
-            "-fx-background-color: linear-gradient(to right, #801a33, #4d1020);" +
-            "-fx-background-radius: 20;" +
-            "-fx-text-fill: white;"
-        );
-        welcomeLabel.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 22));
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
+
         layoutFrame.setTop(topBar);
 
         // --- Center Canvas: Split Content Area ---
@@ -128,7 +125,8 @@ public class AboutScreen {
         layoutFrame.setCenter(splitBody);
 
         // --- Bottom Window Navigation Footer ---
-        HBox bottomBar = UIHelper.createNavigationBar("TRON: Light Cycles", "QUIT");
+        // Dynamically built using UIHelper.createNavigationBar. This fires System.exit(0) automatically when "QUIT" is triggered.
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT");
         layoutFrame.setBottom(bottomBar);
 
         root.getChildren().add(layoutFrame);
