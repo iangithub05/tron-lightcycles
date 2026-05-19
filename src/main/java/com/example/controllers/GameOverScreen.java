@@ -2,6 +2,7 @@ package com.example.controllers;
 
 import com.example.Main;
 import com.example.services.GameSession;
+import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -9,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 public class GameOverScreen {
 
@@ -30,10 +32,8 @@ public class GameOverScreen {
         BorderPane layoutStructure = new BorderPane();
 
         // --- Top Bar Layout ---
-        // Generates the exact top-bar layout matching your title text formatting rules
         HBox topBar = UIHelper.createNavigationBar("|  GAME OVER", "Welcome, " + app.getPlayerName());
         
-        // Grab the username badge element directly to replicate your maroon pill design
         Label welcomeLabel = (Label) topBar.getChildren().get(2);
         welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
         welcomeLabel.setStyle(
@@ -47,19 +47,31 @@ public class GameOverScreen {
         layoutStructure.setTop(topBar);
 
         // --- Centered Status Display Container ---
-        VBox centerContent = new VBox(40);
+        VBox centerContent = new VBox(30); // Decreased slightly to account for the multi-line text
         centerContent.setAlignment(Pos.CENTER);
 
-        // Dynamic result checking to display either "YOU LOSE" or "YOU WIN" in massive retro typography
-        String outcomeText = (result != null && result.toUpperCase().contains("WIN")) ? "YOU WIN" : "YOU LOSE";
-        
-        Label outcomeLabel = new Label(outcomeText);
-        outcomeLabel.setTextFill(Color.WHITE);
-        outcomeLabel.setStyle(
+        // --- Two-Line Strict Typography Layout ---
+        VBox outcomeTextFlow = new VBox(5);
+        outcomeTextFlow.setAlignment(Pos.CENTER);
+
+        Label youLabel = new Label("YOU");
+        youLabel.setTextFill(Color.WHITE);
+        youLabel.setStyle(
             "-fx-font-family: '" + UIHelper.pixelFont.getFamily() + "';" +
-            "-fx-font-size: 110px;" +
-            "-fx-text-alignment: center;"
+            "-fx-font-size: 100px;" +
+            "-fx-font-weight: bold;"
         );
+
+        String dynamicStatus = (result != null && result.toUpperCase().contains("WIN")) ? "WIN" : "LOSE";
+        Label statusLabel = new Label(dynamicStatus);
+        statusLabel.setTextFill(Color.WHITE);
+        statusLabel.setStyle(
+            "-fx-font-family: '" + UIHelper.pixelFont.getFamily() + "';" +
+            "-fx-font-size: 100px;" +
+            "-fx-font-weight: bold;"
+        );
+
+        outcomeTextFlow.getChildren().addAll(youLabel, statusLabel);
 
         // Interactive Options Menu Layout
         VBox actionMenu = new VBox(15);
@@ -100,13 +112,11 @@ public class GameOverScreen {
             "-fx-border-radius: 45;"
         );
 
-        // Subtle opacity adjustments during hover states for a crisp user interface feel
-        retryButton.setOnMouseEntered(e -> retryButton.setOpacity(0.85));
-        retryButton.setOnMouseExited(e -> retryButton.setOpacity(1.0));
-        menuButton.setOnMouseEntered(e -> menuButton.setOpacity(0.85));
-        menuButton.setOnMouseExited(e -> menuButton.setOpacity(1.0));
+        // --- Apply Hover Animations (Bulge + Opacity Transition) ---
+        addButtonEffects(retryButton);
+        addButtonEffects(menuButton);
 
-        // Preserves your logical actions seamlessly
+        // Logic action routing setups
         retryButton.setOnAction(e -> {
             if (session != null) {
                 session.restart();
@@ -116,7 +126,7 @@ public class GameOverScreen {
         menuButton.setOnAction(e -> app.showMainMenu());
 
         actionMenu.getChildren().addAll(retryButton, menuButton);
-        centerContent.getChildren().addAll(outcomeLabel, actionMenu);
+        centerContent.getChildren().addAll(outcomeTextFlow, actionMenu);
         layoutStructure.setCenter(centerContent);
 
         // --- Full-Width Bottom Bar Layout Footer ---
@@ -125,5 +135,28 @@ public class GameOverScreen {
 
         root.getChildren().add(layoutStructure);
         return root;
+    }
+
+    /**
+     * Helper method to attach smooth scaling/bulging effects alongside opacity drops on hover
+     */
+    private void addButtonEffects(Button targetButton) {
+        ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), targetButton);
+        
+        targetButton.setOnMouseEntered(e -> {
+            targetButton.setOpacity(0.85);
+            scaleTransition.stop();
+            scaleTransition.setToX(1.05); // Standard 5% scale expansion outward
+            scaleTransition.setToY(1.05);
+            scaleTransition.play();
+        });
+
+        targetButton.setOnMouseExited(e -> {
+            targetButton.setOpacity(1.0);
+            scaleTransition.stop();
+            scaleTransition.setToX(1.0); // Snap back cleanly to standard scale boundaries
+            scaleTransition.setToY(1.0);
+            scaleTransition.play();
+        });
     }
 }
