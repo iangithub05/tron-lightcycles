@@ -56,7 +56,7 @@ public class JoinLobbyScreen {
 
         BorderPane screen = new BorderPane();
         screen.setTop(styledTopBar("| JOIN A GAME"));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: Light Cycles", "BACK  QUIT"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "BACK  QUIT"));
 
         VBox card = new VBox(14);
         card.setAlignment(Pos.TOP_CENTER);
@@ -172,7 +172,7 @@ public class JoinLobbyScreen {
 
         BorderPane screen = new BorderPane();
         screen.setTop(styledTopBar("| JOINED LOBBY"));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: Light Cycles", "WAITING FOR HOST"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "WAITING FOR HOST"));
 
         HBox main = new HBox(12);
         main.setAlignment(Pos.CENTER);

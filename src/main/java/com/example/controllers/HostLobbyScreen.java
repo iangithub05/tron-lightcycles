@@ -57,7 +57,7 @@ public class HostLobbyScreen {
 
         BorderPane screen = new BorderPane();
         screen.setTop(UIHelper.createNavigationBar("| HOST A GAME", "Welcome, " + app.getPlayerName()));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: Light Cycles", "QUIT"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "QUIT"));
 
         VBox content = new VBox(14);
         content.setPadding(new Insets(18, 38, 18, 38));
