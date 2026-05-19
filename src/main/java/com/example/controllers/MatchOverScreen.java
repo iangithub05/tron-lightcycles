@@ -13,9 +13,9 @@ import javafx.util.Duration;
 
 public class MatchOverScreen {
 
-    private final Main   app;
+    private final Main app;
     private final String result;
-    private final int[]  scores;
+    private final int[] scores;
 
     public MatchOverScreen(Main app, String result, int[] scores) {
         this.app = app;
@@ -57,7 +57,7 @@ public class MatchOverScreen {
         Label line2Label = new Label();
 
         // Check if the current player won
-        if (result != null && result.startsWith("YOU")) {
+        if (result != null && result.contains("WON")) {
             line1Label.setText("YOU");
             line2Label.setText("WON");
         } else {

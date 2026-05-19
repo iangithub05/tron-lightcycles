@@ -26,6 +26,10 @@ public class GameServer {
     private int[]          matchScores;
     private int[]          trailSentCount;
 
+    private static final long NETWORK_BROADCAST_INTERVAL_NANOS = 50_000_000L; // 20 snapshots/sec
+    private final Object gameLock = new Object();
+    private long lastStateBroadcastNanos = 0L;
+
     private ServerSocket           serverSocket;
     private final List<ClientConn> clients = new CopyOnWriteArrayList<>();
     private final List<String>     playerNames = new CopyOnWriteArrayList<>();
@@ -93,6 +97,34 @@ public class GameServer {
     public Game          getGame()        { return game; }
     public LobbySettings getSettings()   { return settings; }
     public List<String>  getPlayerNames() { return new ArrayList<>(playerNames); }
+
+    public int getGamePlayerCount() {
+        synchronized (gameLock) {
+            return game == null ? 0 : game.players.size();
+        }
+    }
+
+    public List<NetworkMessage.PlayerSnapshot> getRenderSnapshots(int[] trailDrawCount) {
+        synchronized (gameLock) {
+            List<NetworkMessage.PlayerSnapshot> snaps = new ArrayList<>();
+            if (game == null || trailDrawCount == null) return snaps;
+
+            List<Player> players = game.players;
+            for (int i = 0; i < players.size(); i++) {
+                Player p = players.get(i);
+                List<Point> all = p.trail.points;
+                int from = i < trailDrawCount.length ? Math.min(trailDrawCount[i], all.size()) : all.size();
+                List<double[]> newTrailPoints = new ArrayList<>();
+                for (int j = from; j < all.size(); j++) {
+                    Point pt = all.get(j);
+                    newTrailPoints.add(new double[]{pt.x, pt.y});
+                }
+                if (i < trailDrawCount.length) trailDrawCount[i] = all.size();
+                snaps.add(new NetworkMessage.PlayerSnapshot(i, p.x, p.y, p.alive, newTrailPoints));
+            }
+            return snaps;
+        }
+    }
 
     public void updateSettings(LobbySettings s) {
         this.settings = s;
@@ -186,26 +218,29 @@ public class GameServer {
 
 
     private void buildGame() {
-        game = new Game(settings.toGameRules());
+        synchronized (gameLock) {
+            game = new Game(settings.toGameRules());
 
-        double[][] startPos = {
-            {80,                       80},
-            {settings.gridWidth - 80,  80},
-            {settings.gridWidth - 80,  settings.gridHeight - 80},
-            {80,                       settings.gridHeight - 80}
-        };
-        Direction[] startDir = {
-            Direction.RIGHT, Direction.DOWN,
-            Direction.LEFT,  Direction.UP
-        };
+            double[][] startPos = {
+                {80,                       80},
+                {settings.gridWidth - 80,  80},
+                {settings.gridWidth - 80,  settings.gridHeight - 80},
+                {80,                       settings.gridHeight - 80}
+            };
+            Direction[] startDir = {
+                Direction.RIGHT, Direction.DOWN,
+                Direction.LEFT,  Direction.UP
+            };
 
-        int total = clients.size() + 1;
-        for (int i = 0; i < total; i++) {
-            game.addPlayer(new Player(startPos[i][0], startPos[i][1],
-                    startDir[i], settings.toGameRules().playerSpeed));
+            int total = clients.size() + 1;
+            for (int i = 0; i < total; i++) {
+                game.addPlayer(new Player(startPos[i][0], startPos[i][1],
+                        startDir[i], settings.toGameRules().playerSpeed));
+            }
+
+            trailSentCount = new int[total];
+            lastStateBroadcastNanos = 0L;
         }
-
-        trailSentCount = new int[total];
     }
 
     private void beginGameLoop() {
@@ -218,23 +253,38 @@ public class GameServer {
         gameExecutor.scheduleAtFixedRate(() -> {
             if (!gameRunning) { gameExecutor.shutdown(); return; }
             try {
-                readInputs();
-                game.update();
-                broadcastState();
+                int winSlot = -2;
+                int[] scoresSnapshot = null;
+                boolean matchOver = false;
 
-                if (game.isOver()) {
-                    gameRunning = false;
+                synchronized (gameLock) {
+                    readInputs();
+                    game.update();
 
-                    Player winner  = game.getWinner();
-                    int    winSlot = (winner != null) ? game.players.indexOf(winner) : -1;
-                    if (winSlot >= 0) matchScores[winSlot]++;
+                    long now = System.nanoTime();
+                    if (lastStateBroadcastNanos == 0L || now - lastStateBroadcastNanos >= NETWORK_BROADCAST_INTERVAL_NANOS) {
+                        broadcastState();
+                        lastStateBroadcastNanos = now;
+                    }
 
+                    if (game.isOver()) {
+                        gameRunning = false;
+                        broadcastState(); // flush final positions/trails before the round result
+
+                        Player winner = game.getWinner();
+                        winSlot = (winner != null) ? game.players.indexOf(winner) : -1;
+                        if (winSlot >= 0) matchScores[winSlot]++;
+                        scoresSnapshot = matchScores.clone();
+                        matchOver = winSlot >= 0 && matchScores[winSlot] >= settings.gamesToWin;
+                    }
+                }
+
+                if (winSlot != -2) {
                     broadcast(NetworkMessage.make(NetworkMessage.ROUND_OVER,
                             String.valueOf(winSlot), scoresString()));
-                    if (onRoundOver != null)
-                        onRoundOver.accept(winSlot, matchScores.clone());
+                    if (onRoundOver != null) onRoundOver.accept(winSlot, scoresSnapshot);
 
-                    if (winSlot >= 0 && matchScores[winSlot] >= settings.gamesToWin) {
+                    if (matchOver) {
                         broadcast(NetworkMessage.make(
                                 NetworkMessage.MATCH_OVER, String.valueOf(winSlot)));
                         if (onMatchOver != null) onMatchOver.accept(winSlot);
@@ -242,7 +292,7 @@ public class GameServer {
                         gameExecutor.schedule(() -> {
                             buildGame();
                             beginGameLoop();
-                        }, 2500, TimeUnit.MILLISECONDS);
+                        }, 6250, TimeUnit.MILLISECONDS);
                     }
 
                     gameExecutor.shutdown();
