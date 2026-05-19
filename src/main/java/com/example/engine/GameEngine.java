@@ -57,7 +57,7 @@ public class GameEngine {
 
                 if (!running) {
                     stop();
-                    Player human  = session.game.players.get(0);
+                    Player human = session.game.players.get(0);
                     Player winner = session.game.getWinner();
                     String result;
                     if (!human.alive) {

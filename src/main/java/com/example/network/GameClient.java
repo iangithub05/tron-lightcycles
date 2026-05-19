@@ -71,7 +71,7 @@ public class GameClient {
         String[] parts = NetworkMessage.parse(raw);
         switch (parts[0]) {
             case NetworkMessage.WELCOME -> {
-                mySlot   = Integer.parseInt(parts[1]);
+                mySlot = Integer.parseInt(parts[1]);
                 settings = LobbySettings.decode(parts[2]);
                 if (onConnected != null) onConnected.accept(mySlot);
             }

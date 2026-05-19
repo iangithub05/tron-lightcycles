@@ -22,7 +22,7 @@ public final class RoomCode {
 
     public static String[] decode(String code) throws Exception {
         long combined = Long.parseLong(code.toLowerCase(), 36);
-        int port  = (int)(combined & 0xFFFFL);
+        int port = (int)(combined & 0xFFFFL);
         long ipInt = combined >> 16;
         String ip = ((ipInt >> 24) & 0xFF) + "."
                   + ((ipInt >> 16) & 0xFF) + "."
