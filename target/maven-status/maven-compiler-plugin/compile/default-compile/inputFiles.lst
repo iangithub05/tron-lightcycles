@@ -1,43 +1,43 @@
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPEasyAI.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/utils/KeyBindings.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MultiplayerScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MultiplayerGameScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/GameOverScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/UIHelper.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/GameScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPHardAI.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/Main.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Trail.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/utils/InputManager.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/network/GameClient.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Difficulty.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/AskNameScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/JoinLobbyScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/LobbySettings.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameSnapshot.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Point.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Direction.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameMode.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Game.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/MultiplayerGame.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/AvoidDeathAIController.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameRules.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/network/LanDiscovery.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MatchOverScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Player.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/network/GameServer.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/network/NetworkMessage.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/HostLobbyScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/network/RoomCode.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/engine/GameEngine.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MainMenuScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/engine/GameRenderer.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPMediumAI.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/AIController.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/ui/Screen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/SingleplayerScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/GameSession.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/ui/Theme.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/models/PlayerSnapshot.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/AboutScreen.java
-/mnt/c/Users/emma/Documents/SyncFolder/User/cmsc137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SinglePlayerSession.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/engine/GameRenderer.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPMediumAI.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameSnapshot.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/HostLobbyScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/AvoidDeathAIController.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/AskNameScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/SingleplayerScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MainMenuScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/utils/KeyBindings.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MatchOverScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MultiplayerGameScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SinglePlayerSession.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/GameOverScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/Main.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/MultiplayerGame.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/engine/GameEngine.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/network/LanDiscovery.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Trail.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/JoinLobbyScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPEasyAI.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/ui/Screen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/UIHelper.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/MultiplayerScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/GameScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/LobbySettings.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/AIController.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/network/GameClient.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/controllers/AboutScreen.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/GameSession.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Game.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Point.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/network/RoomCode.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/ui/Theme.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Direction.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/network/GameServer.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameRules.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/PlayerSnapshot.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Player.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/utils/InputManager.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/Difficulty.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/models/GameMode.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/network/NetworkMessage.java
+/root/School/CMSC 137/PROJECT/tron-lightcycles/src/main/java/com/example/services/SPHardAI.java
