@@ -1,6 +1,7 @@
 package com.example.network;
 
-import com.example.models.Direction;
+import com.example.models.GameSnapshot;
+import com.example.models.PlayerSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,62 +36,67 @@ public class NetworkMessage {
         return raw.split("\\|", -1);
     }
 
-    public static class PlayerSnapshot {
-
-        public int     slot;
-        public double  x, y;
-        public boolean alive;
-        public List<double[]> trailPoints = new ArrayList<>();
-
-        public PlayerSnapshot() {}
-
-        public PlayerSnapshot(int slot, double x, double y,
-                              boolean alive, List<double[]> trailPoints) {
-            this.slot = slot;
-            this.x = x;
-            this.y = y;
-            this.alive = alive;
-            this.trailPoints = trailPoints;
+    public static String encodeSnapshot(GameSnapshot snapshot) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < snapshot.players.size(); i++) {
+            if (i > 0) sb.append(';');
+            sb.append(encodePlayerSnapshot(snapshot.players.get(i)));
         }
+        return sb.toString();
+    }
 
-        public String encode() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(slot).append(':')
-              .append(x).append(':')
-              .append(y).append(':')
-              .append(alive ? '1' : '0').append(':');
-            if (trailPoints != null) {
-                for (int i = 0; i < trailPoints.size(); i++) {
-                    if (i > 0) sb.append(TRAIL_POINT_SEPARATOR);
-                    double[] pt = trailPoints.get(i);
-                    sb.append(pt[0]).append(',').append(pt[1]);
+    public static List<PlayerSnapshot> decodeSnapshots(String encoded) {
+        List<PlayerSnapshot> snapshots = new ArrayList<>();
+        if (encoded == null || encoded.isBlank()) return snapshots;
+        for (String enc : encoded.split(";")) {
+            if (!enc.isEmpty()) snapshots.add(decodePlayerSnapshot(enc));
+        }
+        return snapshots;
+    }
+
+    public static String encodePlayerSnapshot(PlayerSnapshot ps) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ps.slot).append(':')
+          .append(ps.x).append(':')
+          .append(ps.y).append(':')
+          .append(ps.alive ? '1' : '0').append(':')
+          .append(ps.score).append(':')
+          .append(ps.name == null ? "" : ps.name.replace(":", "").replace(";", "")).append(':');
+
+        if (ps.trailPoints != null) {
+            for (int i = 0; i < ps.trailPoints.size(); i++) {
+                if (i > 0) sb.append(TRAIL_POINT_SEPARATOR);
+                double[] pt = ps.trailPoints.get(i);
+                sb.append(pt[0]).append(',').append(pt[1]);
+            }
+        }
+        return sb.toString();
+    }
+
+    public static PlayerSnapshot decodePlayerSnapshot(String enc) {
+        String[] main = enc.split(":", 7);
+        PlayerSnapshot ps = new PlayerSnapshot();
+        ps.slot = Integer.parseInt(main[0]);
+        ps.x = Double.parseDouble(main[1]);
+        ps.y = Double.parseDouble(main[2]);
+        ps.alive = "1".equals(main[3]);
+        ps.score = main.length > 4 && !main[4].isEmpty() ? Integer.parseInt(main[4]) : 0;
+        ps.name = main.length > 5 ? main[5] : "P" + (ps.slot + 1);
+        ps.trailPoints = new ArrayList<>();
+
+        if (main.length > 6 && !main[6].isEmpty()) {
+            for (String pair : main[6].split(TRAIL_POINT_SEPARATOR)) {
+                String[] xy = pair.split(",", 2);
+                if (xy.length == 2) {
+                    try {
+                        ps.trailPoints.add(new double[]{
+                            Double.parseDouble(xy[0]),
+                            Double.parseDouble(xy[1])
+                        });
+                    } catch (NumberFormatException ignored) {}
                 }
             }
-            return sb.toString();
         }
-
-        public static PlayerSnapshot decode(String enc) {
-            String[] main = enc.split(":", 5);
-            PlayerSnapshot ps = new PlayerSnapshot();
-            ps.slot = Integer.parseInt(main[0]);
-            ps.x = Double.parseDouble(main[1]);
-            ps.y = Double.parseDouble(main[2]);
-            ps.alive = "1".equals(main[3]);
-            ps.trailPoints = new ArrayList<>();
-            if (main.length > 4 && !main[4].isEmpty()) {
-                for (String pair : main[4].split(TRAIL_POINT_SEPARATOR)) {
-                    String[] xy = pair.split(",", 2);
-                    if (xy.length == 2) {
-                        try {
-                            ps.trailPoints.add(new double[]{
-                                Double.parseDouble(xy[0]),
-                                Double.parseDouble(xy[1])
-                            });
-                        } catch (NumberFormatException ignored) {}
-                    }
-                }
-            }
-            return ps;
-        }
+        return ps;
     }
 }

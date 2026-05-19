@@ -1,10 +1,9 @@
 package com.example.network;
 
 import com.example.models.Direction;
-import com.example.models.Game;
+import com.example.models.GameSnapshot;
 import com.example.models.LobbySettings;
-import com.example.models.Player;
-import com.example.models.Point;
+import com.example.models.MultiplayerGame;
 
 import java.io.*;
 import java.net.*;
@@ -14,6 +13,10 @@ import java.util.function.*;
 
 public class GameServer {
 
+    private static final int GAME_TICK_MS = 16;
+    private static final int NETWORK_SEND_MS = 50;
+    private static final int NEXT_ROUND_DELAY_MS = 6250;
+
     public Consumer<Integer>          onPlayerCountChanged;
     public BiConsumer<String, String> onChatMessage;
     public Consumer<String>           onPlayerDisconnected;
@@ -22,53 +25,49 @@ public class GameServer {
     public Consumer<Integer>          onMatchOver;
 
     private LobbySettings settings;
-    private Game           game;
-    private int[]          matchScores;
-    private int[]          trailSentCount;
+    private MultiplayerGame multiplayerGame;
+    private volatile GameSnapshot latestSnapshot;
 
-    private static final long NETWORK_BROADCAST_INTERVAL_NANOS = 50_000_000L; // 20 snapshots/sec
-    private final Object gameLock = new Object();
-    private long lastStateBroadcastNanos = 0L;
-
-    private ServerSocket           serverSocket;
+    private ServerSocket serverSocket;
     private final List<ClientConn> clients = new CopyOnWriteArrayList<>();
-    private final List<String>     playerNames = new CopyOnWriteArrayList<>();
+    private final List<String> playerNames = new CopyOnWriteArrayList<>();
 
     private LanDiscovery discovery;
-    private String        roomCode;
-    private String        hostName;
+    private String roomCode;
+    private String hostName;
 
     private ScheduledExecutorService gameExecutor;
-    private volatile boolean         gameRunning;
-    private volatile Direction       hostDir = null;
-
+    private volatile boolean gameRunning;
+    private volatile Direction hostDir = null;
+    private long lastNetworkSendNanos = 0L;
 
     private class ClientConn {
-        final int            slot;
-        final Socket         socket;
+        final int slot;
+        final Socket socket;
         final BufferedReader in;
-        final PrintWriter    out;
-        volatile Direction   pendingDir;
+        final PrintWriter out;
+        volatile Direction pendingDir;
 
         ClientConn(int slot, Socket socket) throws IOException {
-            this.slot   = slot;
+            this.slot = slot;
             this.socket = socket;
-            this.in     = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out    = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
         }
 
-        void send(String msg) { out.println(msg); }
+        void send(String msg) {
+            out.println(msg);
+        }
     }
 
-
     public void listen(int port, LobbySettings settings, String hostName) {
-        this.settings     = settings;
-        this.hostName     = hostName;
-        this.matchScores  = new int[settings.maxPlayers];
+        this.settings = settings;
+        this.hostName = hostName;
 
+        playerNames.clear();
         playerNames.add(hostName);
 
-        roomCode  = RoomCode.encode(RoomCode.getLocalIp(), port);
+        roomCode = RoomCode.encode(RoomCode.getLocalIp(), port);
         discovery = new LanDiscovery();
         discovery.startResponder(roomCode, hostName, 1, settings.maxPlayers);
 
@@ -76,61 +75,63 @@ public class GameServer {
             try {
                 serverSocket = new ServerSocket(port);
                 while (!serverSocket.isClosed()) {
-                    Socket s    = serverSocket.accept();
-                    int    slot = clients.size() + 1;
-                    if (slot >= settings.maxPlayers) { s.close(); continue; }
-                    ClientConn conn = new ClientConn(slot, s);
+                    Socket socket = serverSocket.accept();
+                    int slot = clients.size() + 1;
+                    if (slot >= settings.maxPlayers) {
+                        socket.close();
+                        continue;
+                    }
+                    ClientConn conn = new ClientConn(slot, socket);
                     clients.add(conn);
                     startClientReader(conn);
                 }
             } catch (IOException e) {
-                if (!serverSocket.isClosed() && onError != null)
+                if (serverSocket != null && !serverSocket.isClosed() && onError != null) {
                     onError.accept(e.getMessage());
+                }
             }
         }, "server-accept");
         acceptThread.setDaemon(true);
         acceptThread.start();
     }
 
-    public String        getRoomCode()    { return roomCode; }
-    public String        getLocalIp()     { return RoomCode.getLocalIp(); }
-    public Game          getGame()        { return game; }
-    public LobbySettings getSettings()   { return settings; }
-    public List<String>  getPlayerNames() { return new ArrayList<>(playerNames); }
+    public String getRoomCode() {
+        return roomCode;
+    }
+
+    public String getLocalIp() {
+        return RoomCode.getLocalIp();
+    }
+
+    public LobbySettings getSettings() {
+        return settings;
+    }
+
+    public List<String> getPlayerNames() {
+        return new ArrayList<>(playerNames);
+    }
+
+    public GameSnapshot getLatestSnapshot() {
+        GameSnapshot snapshot = latestSnapshot;
+        return snapshot == null ? null : snapshot.copyWithoutTrail();
+    }
+
+
+    public GameSnapshot getRenderSnapshot(int[] trailDrawCount) {
+        MultiplayerGame game = multiplayerGame;
+        return game == null ? null : game.snapshotUsingTrailCounters(trailDrawCount);
+    }
 
     public int getGamePlayerCount() {
-        synchronized (gameLock) {
-            return game == null ? 0 : game.players.size();
-        }
+        MultiplayerGame game = multiplayerGame;
+        return game == null ? 0 : game.getPlayerCount();
     }
-
-    public List<NetworkMessage.PlayerSnapshot> getRenderSnapshots(int[] trailDrawCount) {
-        synchronized (gameLock) {
-            List<NetworkMessage.PlayerSnapshot> snaps = new ArrayList<>();
-            if (game == null || trailDrawCount == null) return snaps;
-
-            List<Player> players = game.players;
-            for (int i = 0; i < players.size(); i++) {
-                Player p = players.get(i);
-                List<Point> all = p.trail.points;
-                int from = i < trailDrawCount.length ? Math.min(trailDrawCount[i], all.size()) : all.size();
-                List<double[]> newTrailPoints = new ArrayList<>();
-                for (int j = from; j < all.size(); j++) {
-                    Point pt = all.get(j);
-                    newTrailPoints.add(new double[]{pt.x, pt.y});
-                }
-                if (i < trailDrawCount.length) trailDrawCount[i] = all.size();
-                snaps.add(new NetworkMessage.PlayerSnapshot(i, p.x, p.y, p.alive, newTrailPoints));
-            }
-            return snaps;
-        }
-    }
-
     public void updateSettings(LobbySettings s) {
         this.settings = s;
         broadcast(NetworkMessage.make(NetworkMessage.SETTINGS, s.encode()));
-        if (discovery != null)
+        if (discovery != null) {
             discovery.updatePlayerCount(roomCode, hostName, clients.size() + 1, s.maxPlayers);
+        }
     }
 
     public void sendChat(String name, String message) {
@@ -145,16 +146,17 @@ public class GameServer {
         beginGameLoop();
     }
 
-    public void queueHostDirection(Direction dir) { hostDir = dir; }
+    public void queueHostDirection(Direction dir) {
+        hostDir = dir;
+    }
 
     public void close() {
         gameRunning = false;
         if (gameExecutor != null) gameExecutor.shutdownNow();
-        if (discovery    != null) discovery.stopResponder();
+        if (discovery != null) discovery.stopResponder();
         for (ClientConn c : clients) closeConn(c);
         try { if (serverSocket != null) serverSocket.close(); } catch (IOException ignored) {}
     }
-
 
     private void startClientReader(ClientConn conn) {
         Thread t = new Thread(() -> {
@@ -182,11 +184,11 @@ public class GameServer {
                 conn.send(NetworkMessage.make(NetworkMessage.WELCOME,
                         String.valueOf(conn.slot), settings.encode()));
                 broadcastLobbyState();
-                if (onPlayerCountChanged != null)
-                    onPlayerCountChanged.accept(clients.size() + 1);
-                if (discovery != null)
+                if (onPlayerCountChanged != null) onPlayerCountChanged.accept(clients.size() + 1);
+                if (discovery != null) {
                     discovery.updatePlayerCount(roomCode, hostName,
                             clients.size() + 1, settings.maxPlayers);
+                }
             }
             case NetworkMessage.INPUT -> {
                 if (parts.length > 1) {
@@ -205,162 +207,124 @@ public class GameServer {
     }
 
     private void handleClientDisconnect(ClientConn conn) {
-        String name = conn.slot < playerNames.size()
-                ? playerNames.get(conn.slot) : "PLAYER";
+        String name = conn.slot < playerNames.size() ? playerNames.get(conn.slot) : "PLAYER";
         clients.remove(conn);
         closeConn(conn);
         broadcast(NetworkMessage.make(NetworkMessage.DISCONNECT, name));
         if (onPlayerDisconnected != null) onPlayerDisconnected.accept(name);
         broadcastLobbyState();
-        if (onPlayerCountChanged != null)
-            onPlayerCountChanged.accept(clients.size() + 1);
+        if (onPlayerCountChanged != null) onPlayerCountChanged.accept(clients.size() + 1);
     }
 
-
     private void buildGame() {
-        synchronized (gameLock) {
-            game = new Game(settings.toGameRules());
+        multiplayerGame = new MultiplayerGame(settings, getFilledPlayerNames());
+        latestSnapshot = multiplayerGame.snapshot(false);
+        lastNetworkSendNanos = 0L;
+    }
 
-            double[][] startPos = {
-                {80,                       80},
-                {settings.gridWidth - 80,  80},
-                {settings.gridWidth - 80,  settings.gridHeight - 80},
-                {80,                       settings.gridHeight - 80}
-            };
-            Direction[] startDir = {
-                Direction.RIGHT, Direction.DOWN,
-                Direction.LEFT,  Direction.UP
-            };
-
-            int total = clients.size() + 1;
-            for (int i = 0; i < total; i++) {
-                game.addPlayer(new Player(startPos[i][0], startPos[i][1],
-                        startDir[i], settings.toGameRules().playerSpeed));
-            }
-
-            trailSentCount = new int[total];
-            lastStateBroadcastNanos = 0L;
+    private List<String> getFilledPlayerNames() {
+        List<String> filled = new ArrayList<>();
+        for (String name : playerNames) {
+            if (name != null && !name.isEmpty()) filled.add(name);
         }
+        return filled;
     }
 
     private void beginGameLoop() {
-        gameRunning  = true;
+        gameRunning = true;
         gameExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "game-loop");
             t.setDaemon(true);
             return t;
         });
+
         gameExecutor.scheduleAtFixedRate(() -> {
-            if (!gameRunning) { gameExecutor.shutdown(); return; }
+            if (!gameRunning) {
+                gameExecutor.shutdown();
+                return;
+            }
+
             try {
-                int winSlot = -2;
-                int[] scoresSnapshot = null;
-                boolean matchOver = false;
+                readInputs();
+                multiplayerGame.update();
+                latestSnapshot = multiplayerGame.snapshot(false);
+                broadcastStateIfDue();
 
-                synchronized (gameLock) {
-                    readInputs();
-                    game.update();
-
-                    long now = System.nanoTime();
-                    if (lastStateBroadcastNanos == 0L || now - lastStateBroadcastNanos >= NETWORK_BROADCAST_INTERVAL_NANOS) {
-                        broadcastState();
-                        lastStateBroadcastNanos = now;
-                    }
-
-                    if (game.isOver()) {
-                        gameRunning = false;
-                        broadcastState(); // flush final positions/trails before the round result
-
-                        Player winner = game.getWinner();
-                        winSlot = (winner != null) ? game.players.indexOf(winner) : -1;
-                        if (winSlot >= 0) matchScores[winSlot]++;
-                        scoresSnapshot = matchScores.clone();
-                        matchOver = winSlot >= 0 && matchScores[winSlot] >= settings.gamesToWin;
-                    }
-                }
-
-                if (winSlot != -2) {
-                    broadcast(NetworkMessage.make(NetworkMessage.ROUND_OVER,
-                            String.valueOf(winSlot), scoresString()));
-                    if (onRoundOver != null) onRoundOver.accept(winSlot, scoresSnapshot);
-
-                    if (matchOver) {
-                        broadcast(NetworkMessage.make(
-                                NetworkMessage.MATCH_OVER, String.valueOf(winSlot)));
-                        if (onMatchOver != null) onMatchOver.accept(winSlot);
-                    } else {
-                        gameExecutor.schedule(() -> {
-                            buildGame();
-                            beginGameLoop();
-                        }, 6250, TimeUnit.MILLISECONDS);
-                    }
-
-                    gameExecutor.shutdown();
+                if (multiplayerGame.isRoundOver()) {
+                    finishRound();
                 }
             } catch (Exception e) {
                 if (onError != null) onError.accept(e.getMessage());
             }
-        }, 0, 16, TimeUnit.MILLISECONDS);
+        }, 0, GAME_TICK_MS, TimeUnit.MILLISECONDS);
     }
 
     private void readInputs() {
         Direction d = hostDir;
-        if (d != null && !game.players.isEmpty()) {
-            game.players.get(0).setDirection(d);
+        if (d != null) {
+            multiplayerGame.applyDirection(0, d);
             hostDir = null;
         }
+
         for (ClientConn c : clients) {
             Direction cd = c.pendingDir;
-            if (cd != null && c.slot < game.players.size()) {
-                game.players.get(c.slot).setDirection(cd);
+            if (cd != null) {
+                multiplayerGame.applyDirection(c.slot, cd);
                 c.pendingDir = null;
             }
         }
     }
 
-    private void broadcastState() {
-        StringBuilder sb = new StringBuilder();
-        List<Player> players = game.players;
+    private void broadcastStateIfDue() {
+        long now = System.nanoTime();
+        long interval = TimeUnit.MILLISECONDS.toNanos(NETWORK_SEND_MS);
+        if (now - lastNetworkSendNanos < interval) return;
 
-        for (int i = 0; i < players.size(); i++) {
-            if (i > 0) sb.append(';');
+        GameSnapshot snapshot = multiplayerGame.snapshot(true);
+        latestSnapshot = snapshot.copyWithoutTrail();
+        broadcast(NetworkMessage.make(NetworkMessage.STATE, NetworkMessage.encodeSnapshot(snapshot)));
+        lastNetworkSendNanos = now;
+    }
 
-            Player p = players.get(i);
-            List<Point> all = p.trail.points;
-            int from = Math.min(trailSentCount[i], all.size());
+    private void finishRound() {
+        gameRunning = false;
 
-            sb.append(i).append(':')
-              .append(p.x).append(':')
-              .append(p.y).append(':')
-              .append(p.alive ? '1' : '0').append(':');
+        int winSlot = multiplayerGame.getRoundWinnerSlot();
+        int[] scores = multiplayerGame.getScores();
 
-            for (int j = from; j < all.size(); j++) {
-                if (j > from) sb.append('~');
-                Point pt = all.get(j);
-                sb.append(pt.x).append(',').append(pt.y);
-            }
+        broadcast(NetworkMessage.make(NetworkMessage.ROUND_OVER,
+                String.valueOf(winSlot), scoresString(scores)));
+        if (onRoundOver != null) onRoundOver.accept(winSlot, scores.clone());
 
-            trailSentCount[i] = all.size();
+        if (multiplayerGame.isMatchOver()) {
+            int matchWinner = multiplayerGame.getMatchWinnerSlot();
+            broadcast(NetworkMessage.make(NetworkMessage.MATCH_OVER, String.valueOf(matchWinner)));
+            if (onMatchOver != null) onMatchOver.accept(matchWinner);
+        } else {
+            gameExecutor.schedule(() -> {
+                multiplayerGame.resetRound(multiplayerGame.getPlayerCount());
+                latestSnapshot = multiplayerGame.snapshot(false);
+                lastNetworkSendNanos = 0L;
+                beginGameLoop();
+            }, NEXT_ROUND_DELAY_MS, TimeUnit.MILLISECONDS);
         }
 
-        broadcast(NetworkMessage.make(NetworkMessage.STATE, sb.toString()));
+        gameExecutor.shutdown();
     }
 
     private void broadcastLobbyState() {
-        List<String> filled = new ArrayList<>();
-        for (String n : playerNames) if (n != null && !n.isEmpty()) filled.add(n);
-        broadcast(NetworkMessage.make(NetworkMessage.LOBBY_STATE, String.join(",", filled)));
+        broadcast(NetworkMessage.make(NetworkMessage.LOBBY_STATE, String.join(",", getFilledPlayerNames())));
     }
 
     private void broadcast(String msg) {
         for (ClientConn c : clients) c.send(msg);
     }
 
-    private String scoresString() {
+    private String scoresString(int[] scores) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < matchScores.length; i++) {
+        for (int i = 0; i < scores.length; i++) {
             if (i > 0) sb.append(',');
-            sb.append(matchScores[i]);
+            sb.append(scores[i]);
         }
         return sb.toString();
     }
