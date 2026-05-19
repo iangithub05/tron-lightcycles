@@ -8,10 +8,17 @@ import com.example.services.GameSession;
 import com.example.utils.InputManager;
 import com.example.utils.KeyBindings;
 import javafx.animation.AnimationTimer;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.transform.Scale;
+import javafx.stage.Screen;
+
+import java.util.List;
 
 public class GameEngine {
 
@@ -25,9 +32,12 @@ public class GameEngine {
     private final Main app;
     private final GameSession session;
 
+    private Canvas trailCanvas;
     private Canvas canvas;
+    private GraphicsContext trailGc;
     private GraphicsContext gc;
     private AnimationTimer loop;
+    private int[] lastTrailCount;
 
     private long lastTick = 0;
     private static final long TICK_NS = 16_000_000;
@@ -38,9 +48,32 @@ public class GameEngine {
     }
 
     public Pane buildCanvas() {
-        canvas = new Canvas(session.rules.gridWidth, session.rules.gridHeight);
-        gc = canvas.getGraphicsContext2D();
-        return new Pane(canvas);
+        int gw = session.rules.gridWidth;
+        int gh = session.rules.gridHeight;
+
+        // Two-canvas approach: persistent trails + dynamic heads (same as multiplayer)
+        trailCanvas = new Canvas(gw, gh);
+        canvas      = new Canvas(gw, gh);
+        trailGc     = trailCanvas.getGraphicsContext2D();
+        gc          = canvas.getGraphicsContext2D();
+
+        trailGc.setFill(Color.BLACK);
+        trailGc.fillRect(0, 0, gw, gh);
+
+        lastTrailCount = new int[session.game.players.size()];
+
+        // Scale both canvases to fill the actual monitor resolution
+        Rectangle2D screen = Screen.getPrimary().getBounds();
+        double scaleX = screen.getWidth()  / gw;
+        double scaleY = screen.getHeight() / gh;
+
+        Group group = new Group(trailCanvas, canvas);
+        group.getTransforms().add(new Scale(scaleX, scaleY, 0, 0));
+
+        Pane pane = new Pane(group);
+        pane.setPrefSize(screen.getWidth(), screen.getHeight());
+        pane.setStyle("-fx-background-color: black;");
+        return pane;
     }
 
     public void start() {
@@ -57,7 +90,7 @@ public class GameEngine {
 
                 if (!running) {
                     stop();
-                    Player human = session.game.players.get(0);
+                    Player human  = session.game.players.get(0);
                     Player winner = session.game.getWinner();
                     String result;
                     if (!human.alive) {
@@ -80,36 +113,48 @@ public class GameEngine {
 
     private void readInput() {
         Player p = session.game.players.get(0);
-        if (InputManager.isDown(KeyBindings.UP)) p.setDirection(Direction.UP);
-        if (InputManager.isDown(KeyBindings.DOWN)) p.setDirection(Direction.DOWN);
-        if (InputManager.isDown(KeyBindings.LEFT)) p.setDirection(Direction.LEFT);
+        if (InputManager.isDown(KeyBindings.UP))    p.setDirection(Direction.UP);
+        if (InputManager.isDown(KeyBindings.DOWN))  p.setDirection(Direction.DOWN);
+        if (InputManager.isDown(KeyBindings.LEFT))  p.setDirection(Direction.LEFT);
         if (InputManager.isDown(KeyBindings.RIGHT)) p.setDirection(Direction.RIGHT);
     }
 
     private void render() {
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, session.rules.gridWidth, session.rules.gridHeight);
+        int gw = session.rules.gridWidth;
+        int gh = session.rules.gridHeight;
+        List<Player> players = session.game.players;
 
-        gc.setStroke(Color.web("#1a1a2e"));
-        gc.setLineWidth(1);
-        gc.strokeRect(0, 0, session.rules.gridWidth, session.rules.gridHeight);
-
-        for (int i = 0; i < session.game.players.size(); i++) {
-            Player p = session.game.players.get(i);
-            Color color = PLAYER_COLORS[i % PLAYER_COLORS.length];
-
-            gc.setFill(color.deriveColor(0, 1, 0.6, 0.8));
-            for (Point pt : p.trail.points) {
-                gc.fillRect(pt.x - 1, pt.y - 1, 4, 4);
+        // Incrementally draw only new trail segments as smooth lines
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            List<Point> pts = p.trail.points;
+            int from = lastTrailCount[i];
+            if (pts.size() > from) {
+                Color color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+                trailGc.setStroke(color.deriveColor(0, 1, 0.75, 0.9));
+                trailGc.setLineWidth(3);
+                trailGc.setLineCap(StrokeLineCap.ROUND);
+                int start = Math.max(1, from);
+                for (int j = start; j < pts.size(); j++) {
+                    Point a = pts.get(j - 1);
+                    Point b = pts.get(j);
+                    trailGc.strokeLine(a.x, a.y, b.x, b.y);
+                }
+                lastTrailCount[i] = pts.size();
             }
+        }
 
+        // Clear dynamic canvas each frame, then draw player heads
+        gc.clearRect(0, 0, gw, gh);
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
             if (p.alive) {
+                Color color = PLAYER_COLORS[i % PLAYER_COLORS.length];
                 gc.setFill(color);
-                gc.fillOval(p.x - 3, p.y - 3, 8, 8);
-
+                gc.fillOval(p.x - 4, p.y - 4, 10, 10);
                 gc.setStroke(color.deriveColor(0, 1, 1.4, 0.3));
                 gc.setLineWidth(2);
-                gc.strokeOval(p.x - 5, p.y - 5, 12, 12);
+                gc.strokeOval(p.x - 6, p.y - 6, 14, 14);
             }
         }
     }
