@@ -1,9 +1,8 @@
-com/example/network/GameClient$1.class
-com/example/network/GameClient.class
-com/example/network/GameServer.class
-com/example/network/NetworkMessage$PlayerSnapshot.class
-com/example/network/NetworkMessage.class
-com/example/controllers/MultiplayerGameScreen$1.class
-com/example/controllers/MultiplayerGameScreen.class
-com/example/controllers/LobbyScreen.class
-com/example/network/NetworkMessage$Type.class
+com/example/models/GameSnapshot.class
+com/example/models/PlayerSnapshot.class
+com/example/services/AvoidDeathAIController$1.class
+com/example/models/GameSnapshot$Phase.class
+com/example/models/Player$1.class
+com/example/controllers/MultiplayerGameScreen$2.class
+com/example/models/MultiplayerGame.class
+com/example/services/SinglePlayerSession$1.class

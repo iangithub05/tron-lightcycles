@@ -1,0 +1,210 @@
+.root {
+    -fx-background-color: #0e0e1a;
+    -fx-font-family: "Courier New", monospace;
+}
+
+.screen-root {
+    -fx-background-color: #0e0e1a;
+}
+
+.nav-title {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-opacity: 0.5;
+    -fx-padding: 0 0 4 0;
+}
+
+.game-title {
+    -fx-text-fill: #63b3ed;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 42px;
+    -fx-font-weight: bold;
+}
+
+.screen-subtitle {
+    -fx-text-fill: #a0aec0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-padding: 0 0 20 0;
+}
+
+.tron-btn {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1px;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-padding: 14 28 14 28;
+    -fx-cursor: hand;
+    -fx-pref-width: 420px;
+    -fx-min-width: 420px;
+    -fx-alignment: CENTER-LEFT;
+}
+
+.tron-btn:hover {
+    -fx-background-color: #2d3748;
+    -fx-text-fill: #63b3ed;
+    -fx-border-color: #63b3ed;
+    -fx-translate-x: 4px;
+}
+
+.tron-btn:pressed {
+    -fx-background-color: #2a4a6e;
+    -fx-text-fill: #90cdf4;
+    -fx-border-color: #90cdf4;
+}
+
+.tron-btn-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: #718096;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-border-color: transparent;
+    -fx-border-width: 1px;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-padding: 10 28 10 28;
+    -fx-cursor: hand;
+    -fx-pref-width: 420px;
+    -fx-min-width: 420px;
+    -fx-alignment: CENTER-LEFT;
+}
+
+.tron-btn-secondary:hover {
+    -fx-text-fill: #a0aec0;
+    -fx-border-color: #4a5568;
+    -fx-translate-x: 4px;
+}
+
+.tron-input {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 15px;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1px;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-padding: 10 14 10 14;
+    -fx-pref-width: 420px;
+    -fx-min-width: 420px;
+    -fx-prompt-text-fill: #4a5568;
+}
+
+.tron-input:focused {
+    -fx-border-color: #63b3ed;
+}
+
+.tron-label {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.tron-label-dim {
+    -fx-text-fill: #718096;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 12px;
+}
+
+.status-label {
+    -fx-text-fill: #a0aec0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 12px;
+    -fx-pref-width: 420px;
+    -fx-min-width: 420px;
+    -fx-padding: 6 0 0 0;
+}
+
+.section-divider {
+    -fx-background-color: #2d3748;
+    -fx-pref-height: 1px;
+    -fx-min-height: 1px;
+    -fx-pref-width: 420px;
+    -fx-min-width: 420px;
+    -fx-opacity: 0.5;
+}
+
+.config-row-label {
+    -fx-text-fill: #a0aec0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-pref-width: 180px;
+    -fx-min-width: 180px;
+}
+
+.config-row-value {
+    -fx-text-fill: #63b3ed;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.readonly-tag {
+    -fx-text-fill: #718096;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 11px;
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1px;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-padding: 2 6 2 6;
+}
+
+.spinner .text-field {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #2d3748;
+    -fx-border-color: #4a5568;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #4a5568;
+}
+
+.combo-box {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #1a1a2e;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-family: "Courier New", monospace;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1a1a2e;
+    -fx-border-color: #2d3748;
+}
+
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #2d3748;
+    -fx-text-fill: #63b3ed;
+}
+
+.scroll-pane {
+    -fx-background-color: #0d1117;
+    -fx-border-color: #2d3748;
+    -fx-border-width: 1;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: #0d1117;
+}
