@@ -4,11 +4,11 @@ import com.example.Main;
 import com.example.models.Difficulty;
 import com.example.services.SinglePlayerSession;
 import com.example.ui.Theme;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 public class SingleplayerScreen {
 
@@ -19,51 +19,42 @@ public class SingleplayerScreen {
     }
 
     public StackPane getView() {
-        Label nav = new Label("MAIN MENU  /  SINGLEPLAYER");
-        nav.getStyleClass().add("nav-title");
+        StackPane root = new StackPane();
+        root.setBackground(UIHelper.createBackground("/images/background_2.png"));
 
-        Label title = new Label("SINGLEPLAYER");
-        title.getStyleClass().add("game-title");
+        BorderPane menuLayout = new BorderPane();
 
-        Label subtitle = new Label("SELECT DIFFICULTY  —  1 HUMAN  VS  3 AI");
-        subtitle.getStyleClass().add("screen-subtitle");
+        HBox topBar = UIHelper.createNavigationBar("|  SINGLEPLAYER", "WELCOME, " + app.getPlayerName());
+        
+        Label welcomeLabel = (Label) topBar.getChildren().get(2);
+        welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
 
-        Button easy = new Button("EASY");
-        easy.getStyleClass().add("tron-btn-secondary");
-        easy.setOnAction(e -> startGame(Difficulty.EASY));
+        menuLayout.setTop(topBar);
 
-        Button medium = new Button("MEDIUM");
-        medium.getStyleClass().add("tron-btn");
-        medium.setOnAction(e -> startGame(Difficulty.MEDIUM));
+        VBox menuContainer = new VBox(15);
+        menuContainer.setAlignment(Pos.CENTER_RIGHT);
+        // Ensure the menu container is always aligned to the right, even if it's smaller than the screen
+        HBox.setHgrow(menuContainer, Priority.ALWAYS);
+        menuContainer.setPadding(new Insets(40, 0, 40, 20));
 
-        Button hard = new Button("HARD");
-        hard.getStyleClass().add("tron-btn-secondary");
-        hard.setOnAction(e -> startGame(Difficulty.HARD));
+        HBox easyButton = UIHelper.createMenuButton("E", "EASY", "", "#2a4d34", "#7fff9e");
+        HBox mediumButton = UIHelper.createMenuButton("M", "MEDIUM", "", "#3d2b36", "#e099b5");
+        HBox hardButton = UIHelper.createMenuButton("H", "HARD", "", "#24334d", "#8da9df");
+        HBox backButton = UIHelper.createMenuButton("B", "BACK", "RETURN TO MAIN MENU", "#242336", "#7774a7");
 
-        Button back = new Button("←  BACK");
-        back.getStyleClass().add("tron-btn-secondary");
-        back.setOnAction(e -> app.showMainMenu());
+        easyButton.setOnMouseClicked(e -> startGame(Difficulty.EASY));
+        mediumButton.setOnMouseClicked(e -> startGame(Difficulty.MEDIUM));
+        hardButton.setOnMouseClicked(e -> startGame(Difficulty.HARD));
+        backButton.setOnMouseClicked(e -> app.showMainMenu());
 
-        VBox content = new VBox(6,
-            nav,
-            title,
-            subtitle,
-            Theme.spacer(10),
-            Theme.divider(),
-            Theme.spacer(8),
-            easy,
-            medium,
-            hard,
-            Theme.spacer(14),
-            back
-        );
-        content.setAlignment(Pos.TOP_LEFT);
-        content.setMaxWidth(420);
+        menuContainer.getChildren().addAll(easyButton, mediumButton, hardButton, backButton);
+        menuLayout.setCenter(menuContainer);
 
-        StackPane root = new StackPane(content);
-        root.setAlignment(Pos.CENTER);
-        Theme.apply(root);
-        root.getStyleClass().add("screen-root");
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT");
+        menuLayout.setBottom(bottomBar);
+
+        root.getChildren().add(menuLayout);
         return root;
     }
 

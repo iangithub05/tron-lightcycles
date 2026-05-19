@@ -1,12 +1,15 @@
 package com.example.controllers;
 
 import com.example.Main;
-import com.example.ui.Theme;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 public class AboutScreen {
 
@@ -17,45 +20,140 @@ public class AboutScreen {
     }
 
     public StackPane getView() {
-        Label nav = new Label("MAIN MENU  /  ABOUT");
-        nav.getStyleClass().add("nav-title");
+        // --- Main Root Canvas ---
+        StackPane root = new StackPane();
+        root.setBackground(UIHelper.createBackground("/images/background_5.png"));
 
-        Label title = new Label("ABOUT");
-        title.getStyleClass().add("game-title");
+        BorderPane layoutFrame = new BorderPane();
 
-        Label body = new Label(
-            "TRON: LIGHT CYCLES\n\n" +
-            "Outmaneuver your opponents.\n" +
-            "Leave a trail. Force them to crash.\n" +
-            "Don't crash yourself.\n\n" +
-            "Controls\n" +
-            "  Move       WASD / Arrow Keys\n" +
-            "  Pause      ESC\n\n" +
-            "Built with JavaFX."
+        // --- Top Header Panel ---
+        HBox topBar = UIHelper.createNavigationBar("I  ABOUT", "Welcome, " + app.getPlayerName());
+        
+        // Re-styling the generated welcome name token element into a clean maroon pill capsule
+        Label welcomeLabel = (Label) topBar.getChildren().get(2);
+        welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
+        welcomeLabel.setStyle(
+            "-fx-background-color: linear-gradient(to right, #801a33, #4d1020);" +
+            "-fx-background-radius: 20;" +
+            "-fx-text-fill: white;"
         );
-        body.getStyleClass().add("tron-label");
-        body.setWrapText(true);
-        body.setMaxWidth(420);
+        welcomeLabel.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 22));
+        layoutFrame.setTop(topBar);
 
-        Button back = new Button("←  BACK");
-        back.getStyleClass().add("tron-btn-secondary");
-        back.setOnAction(e -> app.showMainMenu());
+        // --- Center Canvas: Split Content Area ---
+        HBox splitBody = new HBox(100); 
+        splitBody.setAlignment(Pos.CENTER);
+        splitBody.setPadding(new Insets(20, 40, 20, 40));
 
-        VBox content = new VBox(6,
-            nav,
-            title,
-            Theme.spacer(16),
-            body,
-            Theme.spacer(24),
-            back
+        // ================= LEFT COLUMN: KEYBOARD MATRIX =================
+        VBox leftColumn = new VBox(40);
+        leftColumn.setAlignment(Pos.CENTER);
+
+        // WASD Input Box Cluster Node
+        VBox wasdGroup = new VBox(8);
+        wasdGroup.setAlignment(Pos.CENTER);
+        
+        HBox wRow = new HBox(); 
+        wRow.setAlignment(Pos.CENTER);
+        wRow.getChildren().add(createKeyCapNode("W"));
+        
+        HBox asdRow = new HBox(8); 
+        asdRow.setAlignment(Pos.CENTER);
+        asdRow.getChildren().addAll(createKeyCapNode("A"), createKeyCapNode("S"), createKeyCapNode("D"));
+        wasdGroup.getChildren().addAll(wRow, asdRow);
+
+        // Arrow Keys Input Box Cluster Node
+        VBox arrowGroup = new VBox(8);
+        arrowGroup.setAlignment(Pos.CENTER);
+        
+        HBox upRow = new HBox(); 
+        upRow.setAlignment(Pos.CENTER);
+        upRow.getChildren().add(createKeyCapNode("↑"));
+        
+        HBox downRow = new HBox(8); 
+        downRow.setAlignment(Pos.CENTER);
+        downRow.getChildren().addAll(createKeyCapNode("←"), createKeyCapNode("↓"), createKeyCapNode("→"));
+        arrowGroup.getChildren().addAll(upRow, downRow);
+
+        // Controls Baseline Subtitle Label Text
+        Label controlsLabel = new Label("Controls");
+        controlsLabel.setTextFill(Color.WHITE);
+        controlsLabel.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 32));
+
+        leftColumn.getChildren().addAll(wasdGroup, arrowGroup, controlsLabel);
+
+        // ================= RIGHT COLUMN: INFO PANEL =================
+        VBox rightColumn = new VBox(25);
+        rightColumn.setAlignment(Pos.CENTER);
+
+        Label titleMain = new Label("TRON");
+        titleMain.setTextFill(Color.WHITE);
+        titleMain.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 100));
+
+        Label titleSub = new Label("Light Cycles");
+        titleSub.setTextFill(Color.WHITE);
+        titleSub.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 42));
+
+        Label instructions = new Label(
+            "Outmaneuver your opponents. Leave a trail. Force them to crash. Don't crash yourself."
         );
-        content.setAlignment(Pos.TOP_LEFT);
-        content.setMaxWidth(420);
+        instructions.setTextFill(Color.WHITE);
+        instructions.setWrapText(true);
+        instructions.setMaxWidth(500);
+        instructions.setStyle("-fx-text-alignment: center; -fx-line-spacing: 12px;");
+        instructions.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.NORMAL, 20));
+        instructions.setPadding(new Insets(15, 0, 25, 0));
 
-        StackPane root = new StackPane(content);
-        root.setAlignment(Pos.CENTER);
-        Theme.apply(root);
-        root.getStyleClass().add("screen-root");
+        Button backBtn = new Button("BACK TO MENU");
+        backBtn.setPrefWidth(450);
+        backBtn.setPrefHeight(80);
+        backBtn.setCursor(Cursor.HAND);
+        backBtn.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 22));
+        
+        backBtn.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, #801a33, #4d1020);" +
+            "-fx-text-fill: #ffffff;" +
+            "-fx-background-radius: 28;" +
+            "-fx-border-color: #380b17;" +
+            "-fx-border-width: 2;" +
+            "-fx-border-radius: 28;"
+        );
+        
+        backBtn.setOnMouseEntered(e -> backBtn.setOpacity(0.85));
+        backBtn.setOnMouseExited(e -> backBtn.setOpacity(1.0));
+        backBtn.setOnAction(e -> app.showMainMenu());
+
+        rightColumn.getChildren().addAll(titleMain, titleSub, instructions, backBtn);
+        splitBody.getChildren().addAll(rightColumn, leftColumn);
+        layoutFrame.setCenter(splitBody);
+
+        // --- Bottom Window Navigation Footer ---
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: Light Cycles", "QUIT");
+        layoutFrame.setBottom(bottomBar);
+
+        root.getChildren().add(layoutFrame);
         return root;
+    }
+
+    private StackPane createKeyCapNode(String keySymbol) {
+        StackPane keyCap = new StackPane();
+        keyCap.setPrefSize(75, 75);
+        keyCap.setMinSize(75, 75);
+        keyCap.setMaxSize(75, 75);
+        
+        keyCap.setStyle(
+            "-fx-background-color: #21283d;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: rgba(255,255,255,0.1);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 10;"
+        );
+
+        Label label = new Label(keySymbol);
+        label.setTextFill(Color.WHITE);
+        label.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 24));
+        
+        keyCap.getChildren().add(label);
+        return keyCap;
     }
 }

@@ -2,11 +2,11 @@ package com.example.controllers;
 
 import com.example.Main;
 import com.example.ui.Theme;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 public class MultiplayerScreen {
 
@@ -17,46 +17,40 @@ public class MultiplayerScreen {
     }
 
     public StackPane getView() {
-        Label nav = new Label("MAIN MENU  /  MULTIPLAYER");
-        nav.getStyleClass().add("nav-title");
+        StackPane root = new StackPane();
+        root.setBackground(UIHelper.createBackground("/images/background_3.png"));
 
-        Label title = new Label("MULTIPLAYER");
-        title.getStyleClass().add("game-title");
+        BorderPane menuLayout = new BorderPane();
 
-        Label subtitle = new Label("host or join a game");
-        subtitle.getStyleClass().add("screen-subtitle");
+        HBox topBar = UIHelper.createNavigationBar("|  MULTIPLAYER", "WELCOME, " + app.getPlayerName());
+        
+        Label welcomeLabel = (Label) topBar.getChildren().get(2);
+        welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
 
-        Button host = new Button("HOST A GAME");
-        Button join = new Button("JOIN A GAME");
+        menuLayout.setTop(topBar);
 
-        host.getStyleClass().add("tron-btn");
-        join.getStyleClass().add("tron-btn");
+        VBox menuContainer = new VBox(15);
+        menuContainer.setAlignment(Pos.CENTER_RIGHT);
+        // Ensure the menu container is always aligned to the right, even if it's smaller than the screen
+        HBox.setHgrow(menuContainer, Priority.ALWAYS);
+        menuContainer.setPadding(new Insets(40, 0, 40, 20));
 
-        host.setOnAction(e -> app.showHostLobby());
-        join.setOnAction(e -> app.showJoinLobby());
+        HBox hostButton = UIHelper.createMenuButton("H", "HOST A GAME", "CREATE A ROOM FOR YOUR FRIENDS", "#2a4d34", "#7fff9e");
+        HBox joinButton = UIHelper.createMenuButton("J", "JOIN A GAME", "JOIN A ROOM CREATED BY YOUR FRIENDS", "#3d2b36", "#e099b5");
+        HBox backButton = UIHelper.createMenuButton("B", "BACK", "RETURN TO MAIN MENU", "#24334d", "#8da9df");
 
-        Button back = new Button("←  BACK");
-        back.getStyleClass().add("tron-btn-secondary");
-        back.setOnAction(e -> app.showMainMenu());
+        hostButton.setOnMouseClicked(e -> app.showHostLobby());
+        joinButton.setOnMouseClicked(e -> app.showJoinLobby());
+        backButton.setOnMouseClicked(e -> app.showMainMenu());
 
-        VBox content = new VBox(6,
-            nav,
-            title,
-            subtitle,
-            host,
-            join,
-            Theme.spacer(10),
-            Theme.divider(),
-            Theme.spacer(4),
-            back
-        );
-        content.setAlignment(Pos.TOP_LEFT);
-        content.setMaxWidth(420);
+        menuContainer.getChildren().addAll(hostButton, joinButton, backButton);
+        menuLayout.setCenter(menuContainer);
 
-        StackPane root = new StackPane(content);
-        root.setAlignment(Pos.CENTER);
-        Theme.apply(root);
-        root.getStyleClass().add("screen-root");
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT");
+        menuLayout.setBottom(bottomBar);
+
+        root.getChildren().add(menuLayout);
         return root;
     }
 }
