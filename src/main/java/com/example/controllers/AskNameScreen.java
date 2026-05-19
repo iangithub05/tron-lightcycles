@@ -57,7 +57,7 @@ public class AskNameScreen {
         // Updated to theme-consistent pixel font
         title.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 70));
 
-        Label subtitle = new Label("Light Cycles");
+        Label subtitle = new Label("LIGHT CYCLES");
         subtitle.setTextFill(Color.web("#2c2d35"));
         subtitle.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 28));
 

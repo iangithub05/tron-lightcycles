@@ -130,7 +130,7 @@ public class GameOverScreen {
         layoutStructure.setCenter(centerContent);
 
         // --- Full-Width Bottom Bar Layout Footer ---
-        HBox bottomBar = UIHelper.createNavigationBar("TRON: Light Cycles", "QUIT");
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT");
         layoutStructure.setBottom(bottomBar);
 
         root.getChildren().add(layoutStructure);
