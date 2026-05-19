@@ -407,20 +407,39 @@ public class MultiplayerGameScreen {
     private void drawSplashOverlay(String title, String subtitle, Color titleColor) {
         double w = settings.gridWidth;
         double h = settings.gridHeight;
+
+        // The old overlay used a fixed 720x280 card, so it was cropped on smaller maps.
+        // Size everything from the actual arena dimensions instead.
+        double margin = Math.max(18, Math.min(w, h) * 0.06);
+        double panelW = Math.max(220, Math.min(720, w - margin * 2));
+        double panelH = Math.max(150, Math.min(280, h - margin * 2));
+        double panelX = (w - panelW) / 2.0;
+        double panelY = (h - panelH) / 2.0;
+
+        double titleFont = clamp(panelW / Math.max(9.0, title.length()) * 1.35, 18, 46);
+        double subtitleFont = clamp(panelW / Math.max(16.0, subtitle.length()) * 1.55, 9, 13);
+
         gc.setFill(Color.web("#000000", 0.60));
         gc.fillRect(0, 0, w, h);
+
         gc.setFill(Color.web("#1b2030", 0.72));
-        gc.fillRoundRect(w / 2.0 - 360, h / 2.0 - 145, 720, 280, 18, 18);
+        gc.fillRoundRect(panelX, panelY, panelW, panelH, 18, 18);
         gc.setStroke(Color.web("#000000", 0.85));
         gc.setLineWidth(2);
-        gc.strokeRoundRect(w / 2.0 - 360, h / 2.0 - 145, 720, 280, 18, 18);
+        gc.strokeRoundRect(panelX, panelY, panelW, panelH, 18, 18);
+
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setFill(titleColor);
-        gc.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 46));
-        gc.fillText(title, w / 2.0, h / 2.0 - 25);
+        gc.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, titleFont));
+        gc.fillText(title, w / 2.0, panelY + panelH * 0.43);
+
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 13));
-        gc.fillText(subtitle, w / 2.0, h / 2.0 + 38);
+        gc.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, subtitleFont));
+        gc.fillText(subtitle, w / 2.0, panelY + panelH * 0.64);
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private void drawTrailSegment(GraphicsContext targetGc, double[] previous, double[] current, Color c) {

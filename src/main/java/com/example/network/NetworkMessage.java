@@ -67,7 +67,9 @@ public class NetworkMessage {
             for (int i = 0; i < ps.trailPoints.size(); i++) {
                 if (i > 0) sb.append(TRAIL_POINT_SEPARATOR);
                 double[] pt = ps.trailPoints.get(i);
-                sb.append(pt[0]).append(',').append(pt[1]);
+                // Coordinates are sent as rounded pixels instead of long double strings.
+                // This shrinks packets heavily and reduces parsing work on clients.
+                sb.append(Math.round(pt[0])).append(',').append(Math.round(pt[1]));
             }
         }
         return sb.toString();
