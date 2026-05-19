@@ -24,10 +24,10 @@ import java.util.Random;
  * PREDICTED position (current + direction * playerSpeed * lookAheadSteps).
  * This makes HARD AI cut ahead of the human instead of chasing from behind.
  *
- * Difficulty controls aggression level:
- *   EASY   – low intercept, no lookahead, noise → weak threat
- *   MEDIUM – medium intercept, 20-step lookahead → noticeably dangerous
- *   HARD   – very high intercept, 50-step lookahead → relentlessly hunts
+ * Difficulty controls the survival-vs-hunt trade-off:
+ *   EASY   – strongly values open space, barely hunts; survives long but poses little threat
+ *   MEDIUM – balanced: solid survival + real hunting pressure; genuinely dangerous
+ *   HARD   – aggressive hunter; survival instinct present but hunt always dominates
  *
  * Personality (same index across all difficulties):
  *   0 = Hunter   – highest intercept, willing to sacrifice space to kill
@@ -46,7 +46,8 @@ public class AvoidDeathAIController implements AIController {
     private final double momentumFactor;
     private final double noiseScale;
     private final int    maxFloodCells;
-    private final int    lookAheadSteps;  // predict human N steps ahead
+    private final int    lookAheadSteps;     // predict human N steps ahead
+    private final double randomMoveProbability; // chance of picking a random safe move (imperfection)
 
     // Pre-allocated BFS structures — zero per-frame GC pressure
     private final boolean[] occupancy = new boolean[CELLS];
@@ -59,24 +60,36 @@ public class AvoidDeathAIController implements AIController {
 
     public AvoidDeathAIController(Difficulty difficulty, int personality) {
 
-        double baseSpace, baseIntercept, baseMomentum, baseNoise;
+        double baseSpace, baseIntercept, baseMomentum, baseNoise, baseRandom;
         int    baseFlood, baseLookAhead;
 
         switch (difficulty) {
             case EASY -> {
-                // Low threat: reacts to human's current position only, makes mistakes
-                baseSpace = 1.0;  baseIntercept = 8;   baseMomentum = 1.08;
-                baseNoise = 0.18; baseFlood = 250;  baseLookAhead = 0;
+                // Survival-first: large spaceWeight keeps it alive; low intercept
+                // means it barely chases the human. Occasional random safe moves
+                // make it imperfect and beatable without causing self-destruction.
+                baseSpace = 2.5;   baseIntercept = 8;   baseMomentum = 1.40;
+                baseNoise = 0.10;  baseFlood = 4000; baseLookAhead = 0;
+                baseRandom = 0.06;
             }
             case HARD -> {
-                // Maximum threat: deep lookahead, hunts relentlessly, rarely mistakes
-                baseSpace = 1.0;  baseIntercept = 120; baseMomentum = 1.20;
-                baseNoise = 0.0;  baseFlood = 5000; baseLookAhead = 50;
+                // MAXIMUM AGGRESSION: intercept=6000 makes every personality
+                // overwhelmingly hunt-dominant (Hunter 26x, Ambusher 7.6x,
+                // Trapper 2.9x — no passive play anywhere). Momentum=1.20 lets
+                // all three pivot quickly when the human dodges; full-arena flood
+                // (CELLS) means they always choose the safe pivot, never self-trap.
+                // 100-step lookahead (700 px at speed 7) aims them at the human's
+                // position almost an entire arena-width ahead — they cross the map
+                // diagonally to cut off every escape route.
+                baseSpace = 0.5;   baseIntercept = 6000; baseMomentum = 1.20;
+                baseNoise = 0.0;   baseFlood = CELLS;    baseLookAhead = 100;
+                baseRandom = 0.0;
             }
             default -> {
-                // MEDIUM: noticeably dangerous but beatable
-                baseSpace = 1.0;  baseIntercept = 40;  baseMomentum = 1.15;
-                baseNoise = 0.0;  baseFlood = 1800; baseLookAhead = 20;
+                // MEDIUM: genuine balance — survives well and actively hunts.
+                baseSpace = 1.8;   baseIntercept = 70;  baseMomentum = 1.40;
+                baseNoise = 0.0;   baseFlood = 5000; baseLookAhead = 30;
+                baseRandom = 0.02;
             }
         }
 
@@ -84,26 +97,29 @@ public class AvoidDeathAIController implements AIController {
             case 0 -> {
                 // Hunter: primary goal is to reach the human's path — accepts
                 // reduced personal space in exchange for maximum intercept pressure.
-                spaceWeight     = baseSpace * 0.55;
-                interceptWeight = baseIntercept * 2.2;
-                momentumFactor  = baseMomentum;
-                noiseScale      = baseNoise;
+                spaceWeight           = baseSpace * 0.55;
+                interceptWeight       = baseIntercept * 2.2;
+                momentumFactor        = baseMomentum;
+                noiseScale            = baseNoise;
+                randomMoveProbability = baseRandom * 0.85;
             }
             case 1 -> {
                 // Trapper: survives long, walls the human into shrinking space.
                 // Less direct pursuit but stays alive to close off escape routes.
-                spaceWeight     = baseSpace * 1.50;
-                interceptWeight = baseIntercept * 0.75;
-                momentumFactor  = baseMomentum * 1.06;
-                noiseScale      = Math.max(0, baseNoise - 0.05);
+                spaceWeight           = baseSpace * 1.50;
+                interceptWeight       = baseIntercept * 0.75;
+                momentumFactor        = baseMomentum * 1.06;
+                noiseScale            = Math.max(0, baseNoise - 0.05);
+                randomMoveProbability = baseRandom * 0.60;
             }
             default -> {
                 // Ambusher: balanced approach with slight unpredictability so the
                 // human can't read its angle of attack as easily.
-                spaceWeight     = baseSpace;
-                interceptWeight = baseIntercept * 1.30;
-                momentumFactor  = baseMomentum * 0.95;
-                noiseScale      = baseNoise + 0.06;
+                spaceWeight           = baseSpace;
+                interceptWeight       = baseIntercept * 1.30;
+                momentumFactor        = baseMomentum * 0.95;
+                noiseScale            = baseNoise + 0.06;
+                randomMoveProbability = baseRandom * 1.15;
             }
         }
 
@@ -118,6 +134,19 @@ public class AvoidDeathAIController implements AIController {
     @Override
     public Direction computeDirection(Player player, Game game) {
         buildOccupancy(game, player);
+
+        // Occasionally pick a random safe move to make the AI imperfect and beatable.
+        if (randomMoveProbability > 0 && rng.nextDouble() < randomMoveProbability) {
+            Direction[] safe = new Direction[4];
+            int safeCount = 0;
+            for (Direction d : Direction.values()) {
+                if (isReverse(player.direction, d)) continue;
+                double nx = player.x + dx(d) * game.rules.playerSpeed;
+                double ny = player.y + dy(d) * game.rules.playerSpeed;
+                if (!isDeadly(nx, ny, game)) safe[safeCount++] = d;
+            }
+            if (safeCount > 0) return safe[rng.nextInt(safeCount)];
+        }
 
         // Always target the human (index 0).  If human is dead, fall back to
         // the closest surviving opponent so the AIs keep fighting each other.

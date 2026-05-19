@@ -40,17 +40,23 @@ public class SinglePlayerSession extends GameSession {
     public SinglePlayerSession(Difficulty difficulty) {
         // super() calls buildGame() → creates 2-player game for VS_AI.
         // We immediately replace that with the real 4-player layout below.
-        super(makeRules(), GameMode.VS_AI);
+        super(makeRules(difficulty), GameMode.VS_AI);
         this.difficulty = difficulty;
         rebuildGame();
         initAI();
     }
 
-    /** Faster speed for singleplayer; tolerance kept equal to speed so trails stay solid. */
-    private static GameRules makeRules() {
+    /**
+     * Speed scales with difficulty: slower on EASY gives more reaction time;
+     * faster on HARD gives less. Tolerance equals speed so trails stay solid.
+     */
+    private static GameRules makeRules(Difficulty difficulty) {
         GameRules r = new GameRules();
-        r.playerSpeed = 3.0;
-        r.collisionTolerance = 3.0;
+        switch (difficulty) {
+            case EASY -> { r.playerSpeed = 4.0; r.collisionTolerance = 4.0; }
+            case HARD -> { r.playerSpeed = 7.0; r.collisionTolerance = 7.0; }
+            default   -> { r.playerSpeed = 5.5; r.collisionTolerance = 5.5; }
+        }
         return r;
     }
 

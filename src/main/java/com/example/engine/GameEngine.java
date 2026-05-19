@@ -8,10 +8,12 @@ import com.example.services.GameSession;
 import com.example.utils.InputManager;
 import com.example.utils.KeyBindings;
 import javafx.animation.AnimationTimer;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Screen;
 
 public class GameEngine {
 
@@ -38,8 +40,17 @@ public class GameEngine {
     }
 
     public Pane buildCanvas() {
-        canvas = new Canvas(session.rules.gridWidth, session.rules.gridHeight);
+        Rectangle2D screen = Screen.getPrimary().getBounds();
+        double screenW = screen.getWidth();
+        double screenH = screen.getHeight();
+
+        canvas = new Canvas(screenW, screenH);
         gc = canvas.getGraphicsContext2D();
+
+        // Scale the coordinate space so all game draw calls (0..gridW, 0..gridH)
+        // map directly to full screen pixels — true fullscreen with no black bars.
+        gc.scale(screenW / session.rules.gridWidth, screenH / session.rules.gridHeight);
+
         return new Pane(canvas);
     }
 
