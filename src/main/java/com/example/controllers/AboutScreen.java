@@ -90,7 +90,7 @@ public class AboutScreen {
         titleMain.setTextFill(Color.WHITE);
         titleMain.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 100));
 
-        Label titleSub = new Label("Light Cycles");
+        Label titleSub = new Label("LIGHT CYCLES");
         titleSub.setTextFill(Color.WHITE);
         titleSub.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 42));
 
@@ -128,7 +128,7 @@ public class AboutScreen {
         layoutFrame.setCenter(splitBody);
 
         // --- Bottom Window Navigation Footer ---
-        HBox bottomBar = UIHelper.createNavigationBar("TRON: Light Cycles", "QUIT");
+        HBox bottomBar = UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT");
         layoutFrame.setBottom(bottomBar);
 
         root.getChildren().add(layoutFrame);
