@@ -7,22 +7,23 @@ import com.example.models.Player;
 import com.example.network.GameClient;
 import com.example.network.GameServer;
 import com.example.network.NetworkMessage;
+import com.example.models.Point;
 
 import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.input.KeyCode;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
-import java.util.List;
+import java.util.*;
 
 public class MultiplayerGameScreen {
 
@@ -30,152 +31,233 @@ public class MultiplayerGameScreen {
         Color.CYAN, Color.LIMEGREEN, Color.ORANGERED, Color.MEDIUMPURPLE
     };
 
-    private final Main app;
+    private final Main          app;
+    private final LobbySettings settings;
+    private final String        myName;
+
     private final GameServer server;
     private final GameClient client;
-    private final LobbySettings settings;
-    private final String myName;
-    private final int mySlot;
+    private final int        mySlot;
 
+    private Canvas          trailCanvas;
     private Canvas          canvas;
+    private GraphicsContext trailGc;
     private GraphicsContext gc;
     private AnimationTimer  renderLoop;
-    private volatile List<NetworkMessage.PlayerSnapshot> latestSnapshots = null;
 
-    private volatile int[]   scores         = null;
-    private volatile boolean localPlayerDead = false;
-    public MultiplayerGameScreen(Main app, GameServer server,
+    private final Map<Integer, List<double[]>> pendingClientTrailPoints = new HashMap<>();
+    private final Map<Integer, NetworkMessage.PlayerSnapshot> latestHeads = new HashMap<>();
+    private int[] serverTrailDrawCount;
+
+    private int[]   scores;
+    private boolean localPlayerDead = false;
+    private boolean roundTransitioning = false;
+    private boolean lastLocalAlive = true;
+    private boolean localDeathSplashShown = false;
+
+    private boolean splashVisible = false;
+    private String  splashTitle = "";
+    private String  splashSubtitle = "";
+    private Color   splashColor = Color.WHITE;
+    private PauseTransition splashTimer;
+    private PauseTransition nextRoundTimer;
+
+    public MultiplayerGameScreen(Main app, GameServer server, LobbySettings settings, String myName) {
+        this.app = app; this.server = server; this.client = null;
+        this.settings = settings; this.myName = myName;
+        this.mySlot = 0;
+    }
+
+    public MultiplayerGameScreen(Main app, GameClient client,
                                  LobbySettings settings, String myName) {
-        this.app      = app;
-        this.server   = server;
-        this.client   = null;
-        this.settings = settings;
-        this.myName   = myName;
-        this.mySlot   = 0;
+        this.app = app; this.server = null; this.client = client;
+        this.settings = settings; this.myName = myName;
+        this.mySlot = client.getMySlot();
     }
-
-    public MultiplayerGameScreen(Main app, GameClient client, LobbySettings settings, String myName) {
-        this.app      = app;
-        this.server   = null;
-        this.client   = client;
-        this.settings = settings;
-        this.myName   = myName;
-        this.mySlot   = client.getMySlot();
-    }
-
 
     public StackPane getView() {
-        canvas = new Canvas(settings.gridWidth, settings.gridHeight);
-        gc     = canvas.getGraphicsContext2D();
+        trailCanvas = new Canvas(settings.gridWidth, settings.gridHeight);
+        canvas      = new Canvas(settings.gridWidth, settings.gridHeight);
+        trailGc     = trailCanvas.getGraphicsContext2D();
+        gc          = canvas.getGraphicsContext2D();
+        clearTrailCanvas();
 
-        Pane       canvasPane = new Pane(canvas);
-        StackPane  root       = new StackPane(canvasPane);
+        Pane      canvasPane = new Pane(trailCanvas, canvas);
+        StackPane root       = new StackPane(canvasPane);
 
         root.setFocusTraversable(true);
         root.setOnKeyPressed(e -> handleKey(e.getCode()));
 
-        wireCallbacks();
-        startRenderLoop();
+        if (client != null) {
+            client.onStateUpdate = snaps -> Platform.runLater(() -> applyClientSnapshots(snaps));
+            client.onRoundOver = (winSlot, sc) -> Platform.runLater(() -> {
+                scores = sc;
+                roundTransitioning = true;
+                startRoundResolvedSplash(winSlot, sc);
+            });
+            client.onMatchOver = winSlot -> Platform.runLater(() -> showMatchOver(winSlot));
+            client.onPlayerDisconnected = name -> Platform.runLater(() -> showDisconnectNotice(name));
+        } else {
+            server.onRoundOver = (winSlot, sc) -> Platform.runLater(() -> {
+                scores = sc;
+                roundTransitioning = true;
+                startRoundResolvedSplash(winSlot, sc);
+            });
+            server.onMatchOver = winSlot -> Platform.runLater(() -> showMatchOver(winSlot));
+            server.onPlayerDisconnected = name -> Platform.runLater(() -> showDisconnectNotice(name));
+        }
 
+        startRenderLoop();
         Platform.runLater(root::requestFocus);
         return root;
     }
 
-
-    private void wireCallbacks() {
-        if (client != null) {
-            client.onStateUpdate = snaps -> {
-                latestSnapshots = snaps;
-            };
-            client.onRoundOver = (winSlot, sc) -> Platform.runLater(() -> {
-                scores = sc;
-                showRoundSplash(winSlot, sc);
-            });
-            client.onMatchOver = winSlot -> Platform.runLater(() ->
-                showMatchOver(winSlot));
-            client.onPlayerDisconnected = name -> Platform.runLater(() ->
-                showDisconnectNotice(name));
-
-        } else {
-            server.onRoundOver = (winSlot, sc) -> Platform.runLater(() -> {
-                scores = sc;
-                showRoundSplash(winSlot, sc);
-            });
-            server.onMatchOver = winSlot -> Platform.runLater(() ->
-                showMatchOver(winSlot));
-            server.onPlayerDisconnected = name -> Platform.runLater(() ->
-                showDisconnectNotice(name));
-        }
-    }
-
-
     private void startRenderLoop() {
         renderLoop = new AnimationTimer() {
             @Override public void handle(long now) {
-                if (server != null) renderFromServer();
-                else                renderFromSnapshots();
+                if (client != null) renderSnapshots();
+                else                renderServerGame();
             }
         };
         renderLoop.start();
     }
 
-    private void renderFromServer() {
-        if (server.getGame() == null) return;
+    private void applyClientSnapshots(List<NetworkMessage.PlayerSnapshot> snaps) {
+        if (roundTransitioning) return;
 
-        clearCanvas();
-
-        List<Player> players = server.getGame().players;
-        for (int i = 0; i < players.size(); i++) {
-            Player p = players.get(i);
-            Color  c = colorFor(i);
-            drawTrail(p.trail.points.stream()
-                          .map(pt -> new double[]{pt.x, pt.y})
-                          .toList(), c);
-            if (p.alive) drawHead(p.x, p.y, c);
-        }
-
-        drawHud();
-
-        if (mySlot < players.size() && !players.get(mySlot).alive) {
-            localPlayerDead = true;
-        }
-        if (localPlayerDead) drawDeadOverlay();
-    }
-
-    private void renderFromSnapshots() {
-        List<NetworkMessage.PlayerSnapshot> snaps = latestSnapshots;
-        if (snaps == null) return;
-
-        clearCanvas();
+        int aliveCount = 0;
+        NetworkMessage.PlayerSnapshot local = null;
 
         for (NetworkMessage.PlayerSnapshot s : snaps) {
-            Color c = colorFor(s.slot);
-            drawTrail(s.trailPoints, c);
-            if (s.alive) drawHead(s.x, s.y, c);
-        }
+            latestHeads.put(s.slot, s);
+            if (s.alive) aliveCount++;
+            if (s.slot == mySlot) local = s;
 
-        drawHud();
-
-        for (NetworkMessage.PlayerSnapshot s : snaps) {
-            if (s.slot == mySlot && !s.alive) {
-                localPlayerDead = true;
-                break;
+            if (s.trailPoints != null && !s.trailPoints.isEmpty()) {
+                pendingClientTrailPoints
+                        .computeIfAbsent(s.slot, k -> new ArrayList<>())
+                        .addAll(s.trailPoints);
             }
         }
-        if (localPlayerDead) drawDeadOverlay();
+
+        if (local != null) updateLocalLifeState(local.alive, snaps.size(), aliveCount);
     }
 
-    private void clearCanvas() {
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, settings.gridWidth, settings.gridHeight);
-    }
-
-    private void drawTrail(List<double[]> pts, Color c) {
-        if (pts == null || pts.isEmpty()) return;
-        gc.setFill(c.deriveColor(0, 1, 0.6, 0.8));
-        for (double[] pt : pts) {
-            gc.fillRect(pt[0] - 1, pt[1] - 1, 4, 4);
+    private void renderServerGame() {
+        if (roundTransitioning) {
+            clearDynamicCanvas();
+            drawHud();
+            drawMultiplayerOverlay();
+            return;
         }
+        if (server.getGame() == null) return;
+
+        List<Player> players = new ArrayList<>(server.getGame().players);
+        ensureServerTrailDrawCount(players.size());
+        drawNewServerTrailPoints(players);
+
+        clearDynamicCanvas();
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            if (p.alive) drawHead(p.x, p.y, PLAYER_COLORS[i % PLAYER_COLORS.length]);
+        }
+
+        if (mySlot < players.size()) {
+            int aliveCount = 0;
+            for (Player p : players) if (p.alive) aliveCount++;
+            updateLocalLifeState(players.get(mySlot).alive, players.size(), aliveCount);
+        }
+
+        drawHud();
+        drawMultiplayerOverlay();
+    }
+
+    private void renderSnapshots() {
+        if (roundTransitioning) {
+            clearDynamicCanvas();
+            drawHud();
+            drawMultiplayerOverlay();
+            return;
+        }
+        if (latestHeads.isEmpty()) return;
+
+        drawPendingClientTrailPoints();
+        clearDynamicCanvas();
+
+        for (Map.Entry<Integer, NetworkMessage.PlayerSnapshot> entry : latestHeads.entrySet()) {
+            int slot = entry.getKey();
+            NetworkMessage.PlayerSnapshot s = entry.getValue();
+            if (s.alive) drawHead(s.x, s.y, PLAYER_COLORS[slot % PLAYER_COLORS.length]);
+        }
+
+        drawHud();
+        drawMultiplayerOverlay();
+    }
+
+    private void ensureServerTrailDrawCount(int playerCount) {
+        if (serverTrailDrawCount != null && serverTrailDrawCount.length == playerCount) return;
+        serverTrailDrawCount = new int[playerCount];
+        clearTrailCanvas();
+    }
+
+    private void drawNewServerTrailPoints(List<Player> players) {
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            Color c = PLAYER_COLORS[i % PLAYER_COLORS.length];
+            int from = Math.min(serverTrailDrawCount[i], p.trail.points.size());
+            for (int j = from; j < p.trail.points.size(); j++) {
+                Point pt = p.trail.points.get(j);
+                drawTrailPoint(trailGc, pt.x, pt.y, c);
+            }
+            serverTrailDrawCount[i] = p.trail.points.size();
+        }
+    }
+
+    private void drawPendingClientTrailPoints() {
+        for (Map.Entry<Integer, List<double[]>> entry : pendingClientTrailPoints.entrySet()) {
+            int slot = entry.getKey();
+            Color c = PLAYER_COLORS[slot % PLAYER_COLORS.length];
+            List<double[]> pts = entry.getValue();
+            for (double[] pt : pts) drawTrailPoint(trailGc, pt[0], pt[1], c);
+            pts.clear();
+        }
+    }
+
+    private void clearTrailCanvas() {
+        if (trailGc == null) return;
+        trailGc.setFill(Color.BLACK);
+        trailGc.fillRect(0, 0, settings.gridWidth, settings.gridHeight);
+    }
+
+    private void clearDynamicCanvas() {
+        gc.clearRect(0, 0, settings.gridWidth, settings.gridHeight);
+    }
+
+    private void drawMultiplayerOverlay() {
+        if (splashVisible) {
+            drawSplashOverlay(splashTitle, splashSubtitle, splashColor);
+        } else if (localPlayerDead && !roundTransitioning) {
+            drawSplashOverlay("ELIMINATED", "spectating until the round ends…", Color.web("#a0aec0"));
+        }
+    }
+
+    private void drawSplashOverlay(String title, String subtitle, Color titleColor) {
+        double w = settings.gridWidth;
+        double h = settings.gridHeight;
+        gc.setFill(Color.web("#000000", 0.68));
+        gc.fillRect(0, 0, w, h);
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setFill(titleColor);
+        gc.setFont(Font.font("Courier New", FontWeight.BOLD, 72));
+        gc.fillText(title, w / 2.0, h / 2.0 - 22);
+        gc.setFill(Color.web("#a0aec0"));
+        gc.setFont(Font.font("Courier New", 20));
+        gc.fillText(subtitle, w / 2.0, h / 2.0 + 32);
+    }
+
+    private void drawTrailPoint(GraphicsContext targetGc, double x, double y, Color c) {
+        targetGc.setFill(c.deriveColor(0, 1, 0.6, 0.8));
+        targetGc.fillRect(x - 1, y - 1, 4, 4);
     }
 
     private void drawHead(double x, double y, Color c) {
@@ -187,101 +269,133 @@ public class MultiplayerGameScreen {
     }
 
     private void drawHud() {
-        int[] sc = scores;
-        if (sc == null) return;
-
+        if (scores == null) return;
         gc.setFill(Color.web("#0e0e1a", 0.7));
-        gc.fillRoundRect(10, 10, 200, 30 * sc.length + 10, 4, 4);
-
-        for (int i = 0; i < sc.length; i++) {
-            gc.setFill(colorFor(i));
+        gc.fillRoundRect(10, 10, 200, 30 * scores.length + 10, 4, 4);
+        for (int i = 0; i < scores.length; i++) {
+            Color c = PLAYER_COLORS[i % PLAYER_COLORS.length];
+            gc.setFill(c);
             gc.setFont(Font.font("Courier New", 13));
             gc.setTextAlign(TextAlignment.LEFT);
-            gc.fillText("P" + (i + 1) + ": " + sc[i] + " wins"
+            gc.fillText("P" + (i + 1) + ": " + scores[i] + " wins"
                     + (i == mySlot ? "  ←" : ""), 20, 30 + i * 30);
         }
     }
 
-    private void drawDeadOverlay() {
-        double w = settings.gridWidth;
-        double h = settings.gridHeight;
-
-        gc.setFill(Color.web("#0a0a14", 0.72));
-        gc.fillRect(0, 0, w, h);
-
-        gc.setFill(Color.web("#fc8181"));
-        gc.setFont(Font.font("Courier New", FontWeight.BOLD, 72));
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText("YOU DIED", w / 2.0, h / 2.0 - 20);
-
-        gc.setFill(Color.web("#a0aec0"));
-        gc.setFont(Font.font("Courier New", 20));
-        gc.fillText("spectating…", w / 2.0, h / 2.0 + 30);
-    }
-
-
     private void handleKey(KeyCode code) {
-        if (localPlayerDead) return;
-
+        if (localPlayerDead || roundTransitioning) return;
         Direction dir = switch (code) {
-            case UP,    W -> Direction.UP;
-            case DOWN,  S -> Direction.DOWN;
-            case LEFT,  A -> Direction.LEFT;
+            case UP, W    -> Direction.UP;
+            case DOWN, S  -> Direction.DOWN;
+            case LEFT, A  -> Direction.LEFT;
             case RIGHT, D -> Direction.RIGHT;
             default -> null;
         };
         if (dir == null) return;
-
         if (server != null) server.queueHostDirection(dir);
         else                client.sendDirection(dir);
     }
 
+    private void updateLocalLifeState(boolean isAlive, int totalPlayers, int aliveCount) {
+        boolean justDied = lastLocalAlive && !isAlive;
+        localPlayerDead = !isAlive;
+        lastLocalAlive = isAlive;
 
-    private void showRoundSplash(int winSlot, int[] sc) {
+        if (justDied && !roundTransitioning && !localDeathSplashShown) {
+            localDeathSplashShown = true;
+            if (totalPlayers > 2 && aliveCount > 1) {
+                showTemporarySplash("YOU DIED", "round continues — spectating…", Color.web("#e53e3e"), 1.15);
+            }
+        }
+    }
+
+    private void startRoundResolvedSplash(int winSlot, int[] sc) {
+        cancelSplashTimers();
+        scores = sc;
+        splashVisible = true;
+
+        boolean localWon = winSlot == mySlot;
+        boolean draw = winSlot < 0;
+
+        if (localWon) {
+            setSplash("YOU WON", scoreLine(sc), Color.web("#68d391"));
+            scheduleNextRoundSplash(sc, 1.00);
+        } else if (draw) {
+            setSplash("DRAW", scoreLine(sc), Color.web("#f6e05e"));
+            scheduleNextRoundSplash(sc, 1.00);
+        } else if (!localDeathSplashShown) {
+            setSplash("YOU DIED", "P" + (winSlot + 1) + " wins this round", Color.web("#e53e3e"));
+            scheduleNextRoundSplash(sc, 1.00);
+        } else {
+            setSplash("NEXT GAME STARTING", scoreLine(sc), Color.web("#63b3ed"));
+            finishRoundTransitionAfter(sc, 1.40);
+        }
+    }
+
+    private void scheduleNextRoundSplash(int[] sc, double delaySeconds) {
+        splashTimer = new PauseTransition(Duration.seconds(delaySeconds));
+        splashTimer.setOnFinished(e -> {
+            setSplash("NEXT GAME STARTING", scoreLine(sc), Color.web("#63b3ed"));
+            finishRoundTransitionAfter(sc, 1.25);
+        });
+        splashTimer.play();
+    }
+
+    private void finishRoundTransitionAfter(int[] sc, double delaySeconds) {
+        nextRoundTimer = new PauseTransition(Duration.seconds(delaySeconds));
+        nextRoundTimer.setOnFinished(e -> resetForNextRound(sc));
+        nextRoundTimer.play();
+    }
+
+    private void resetForNextRound(int[] sc) {
+        scores = sc;
         localPlayerDead = false;
-        renderLoop.stop();
+        lastLocalAlive = true;
+        localDeathSplashShown = false;
+        roundTransitioning = false;
+        splashVisible = false;
+        pendingClientTrailPoints.clear();
+        latestHeads.clear();
+        serverTrailDrawCount = null;
+        clearTrailCanvas();
+        clearDynamicCanvas();
+    }
 
-        String who = winSlot < 0        ? "DRAW!"
-                   : winSlot == mySlot  ? "YOU WIN!"
-                                        : "P" + (winSlot + 1) + " WINS!";
+    private void showTemporarySplash(String title, String subtitle, Color color, double seconds) {
+        if (splashTimer != null) splashTimer.stop();
+        setSplash(title, subtitle, color);
+        splashTimer = new PauseTransition(Duration.seconds(seconds));
+        splashTimer.setOnFinished(e -> splashVisible = false);
+        splashTimer.play();
+    }
 
-        double w = settings.gridWidth;
-        double h = settings.gridHeight;
+    private void setSplash(String title, String subtitle, Color color) {
+        splashTitle = title;
+        splashSubtitle = subtitle;
+        splashColor = color;
+        splashVisible = true;
+    }
 
-        gc.setFill(Color.web("#0e0e1a", 0.85));
-        gc.fillRect(0, 0, w, h);
-
-        gc.setFill(Color.web("#63b3ed"));
-        gc.setFont(Font.font("Courier New", FontWeight.BOLD, 56));
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText(who, w / 2.0, h / 2.0 - 30);
-
-        gc.setFill(Color.web("#a0aec0"));
-        gc.setFont(Font.font("Courier New", 20));
-
+    private String scoreLine(int[] sc) {
         StringBuilder scoreLine = new StringBuilder("Score: ");
         for (int i = 0; i < sc.length; i++) {
             if (i > 0) scoreLine.append("  |  ");
             scoreLine.append("P").append(i + 1).append(": ").append(sc[i]);
         }
-        gc.fillText(scoreLine.toString(), w / 2.0, h / 2.0 + 30);
+        return scoreLine.toString();
+    }
 
-        gc.setFont(Font.font("Courier New", 14));
-        gc.fillText("next round starting…", w / 2.0, h / 2.0 + 70);
-
-        PauseTransition pause = new PauseTransition(Duration.seconds(2));
-        pause.setOnFinished(e -> {
-            latestSnapshots = null;
-            renderLoop.start();
-        });
-        pause.play();
+    private void cancelSplashTimers() {
+        if (splashTimer != null) splashTimer.stop();
+        if (nextRoundTimer != null) nextRoundTimer.stop();
+        splashTimer = null;
+        nextRoundTimer = null;
     }
 
     private void showMatchOver(int winSlot) {
+        cancelSplashTimers();
         renderLoop.stop();
-        String who = winSlot == mySlot
-                ? "YOU WON THE MATCH!"
-                : "P" + (winSlot + 1) + " WINS THE MATCH!";
+        String who = winSlot == mySlot ? "YOU WON THE MATCH!" : "P" + (winSlot + 1) + " WINS THE MATCH!";
         if (server != null) server.close();
         app.showMultiplayerMatchOver(who, scores);
     }
@@ -290,12 +404,6 @@ public class MultiplayerGameScreen {
         gc.setFill(Color.web("#e53e3e", 0.9));
         gc.setFont(Font.font("Courier New", 14));
         gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("⚠  " + name + " disconnected",
-                20, settings.gridHeight - 20);
-    }
-
-
-    private static Color colorFor(int slot) {
-        return PLAYER_COLORS[slot % PLAYER_COLORS.length];
+        gc.fillText("⚠  " + name + " disconnected", 20, settings.gridHeight - 20);
     }
 }

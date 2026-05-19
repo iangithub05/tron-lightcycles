@@ -7,19 +7,21 @@ import java.util.List;
 
 public class NetworkMessage {
 
-    public static final String HELLO        = "HELLO";
-    public static final String WELCOME      = "WELCOME";
-    public static final String LOBBY_STATE  = "LOBBY_STATE";
-    public static final String SETTINGS     = "SETTINGS";
-    public static final String CHAT         = "CHAT";
-    public static final String START        = "START";
-    public static final String STATE        = "STATE";
-    public static final String ROUND_OVER   = "ROUND_OVER";
-    public static final String MATCH_OVER   = "MATCH_OVER";
-    public static final String INPUT        = "INPUT";
-    public static final String DISCONNECT   = "DISCONNECT";
-    public static final String PING         = "PING";
-    public static final String PONG         = "PONG";
+    private static final String TRAIL_POINT_SEPARATOR = "~";
+
+    public static final String HELLO = "HELLO";
+    public static final String WELCOME = "WELCOME";
+    public static final String LOBBY_STATE = "LOBBY_STATE";
+    public static final String SETTINGS = "SETTINGS";
+    public static final String CHAT = "CHAT";
+    public static final String START = "START";
+    public static final String STATE = "STATE";
+    public static final String ROUND_OVER = "ROUND_OVER";
+    public static final String MATCH_OVER = "MATCH_OVER";
+    public static final String INPUT = "INPUT";
+    public static final String DISCONNECT = "DISCONNECT";
+    public static final String PING = "PING";
+    public static final String PONG = "PONG";
     public static final String DISCOVER_REQ = "TRON_DISCOVER";
     public static final String DISCOVER_RESP = "TRON_HERE";
 
@@ -44,10 +46,10 @@ public class NetworkMessage {
 
         public PlayerSnapshot(int slot, double x, double y,
                               boolean alive, List<double[]> trailPoints) {
-            this.slot        = slot;
-            this.x           = x;
-            this.y           = y;
-            this.alive       = alive;
+            this.slot = slot;
+            this.x = x;
+            this.y = y;
+            this.alive = alive;
             this.trailPoints = trailPoints;
         }
 
@@ -59,7 +61,7 @@ public class NetworkMessage {
               .append(alive ? '1' : '0').append(':');
             if (trailPoints != null) {
                 for (int i = 0; i < trailPoints.size(); i++) {
-                    if (i > 0) sb.append('|');
+                    if (i > 0) sb.append(TRAIL_POINT_SEPARATOR);
                     double[] pt = trailPoints.get(i);
                     sb.append(pt[0]).append(',').append(pt[1]);
                 }
@@ -70,13 +72,13 @@ public class NetworkMessage {
         public static PlayerSnapshot decode(String enc) {
             String[] main = enc.split(":", 5);
             PlayerSnapshot ps = new PlayerSnapshot();
-            ps.slot  = Integer.parseInt(main[0]);
-            ps.x     = Double.parseDouble(main[1]);
-            ps.y     = Double.parseDouble(main[2]);
+            ps.slot = Integer.parseInt(main[0]);
+            ps.x = Double.parseDouble(main[1]);
+            ps.y = Double.parseDouble(main[2]);
             ps.alive = "1".equals(main[3]);
             ps.trailPoints = new ArrayList<>();
             if (main.length > 4 && !main[4].isEmpty()) {
-                for (String pair : main[4].split("\\|")) {
+                for (String pair : main[4].split(TRAIL_POINT_SEPARATOR)) {
                     String[] xy = pair.split(",", 2);
                     if (xy.length == 2) {
                         try {

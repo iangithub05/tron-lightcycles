@@ -37,8 +37,8 @@ import java.util.Random;
 public class AvoidDeathAIController implements AIController {
 
     private static final int CELL_SIZE = 8;
-    private static final int COLS  = 1280 / CELL_SIZE;   // 160
-    private static final int ROWS  =  720 / CELL_SIZE;   //  90
+    private static final int COLS = 1280 / CELL_SIZE;   // 160
+    private static final int ROWS =  720 / CELL_SIZE;   //  90
     private static final int CELLS = COLS * ROWS;         // 14 400
 
     private final double spaceWeight;
@@ -50,10 +50,10 @@ public class AvoidDeathAIController implements AIController {
 
     // Pre-allocated BFS structures — zero per-frame GC pressure
     private final boolean[] occupancy = new boolean[CELLS];
-    private final int[]     visitGen  = new int[CELLS];
-    private final int[]     bfsQueue  = new int[CELLS];
+    private final int[]     visitGen = new int[CELLS];
+    private final int[]     bfsQueue = new int[CELLS];
     private int genStamp = 0;
-    private int bfsTail  = 0;
+    private int bfsTail = 0;
 
     private final Random rng = new Random();
 
@@ -84,30 +84,30 @@ public class AvoidDeathAIController implements AIController {
             case 0 -> {
                 // Hunter: primary goal is to reach the human's path — accepts
                 // reduced personal space in exchange for maximum intercept pressure.
-                spaceWeight     = baseSpace * 0.55;
+                spaceWeight = baseSpace * 0.55;
                 interceptWeight = baseIntercept * 2.2;
-                momentumFactor  = baseMomentum;
-                noiseScale      = baseNoise;
+                momentumFactor = baseMomentum;
+                noiseScale = baseNoise;
             }
             case 1 -> {
                 // Trapper: survives long, walls the human into shrinking space.
                 // Less direct pursuit but stays alive to close off escape routes.
-                spaceWeight     = baseSpace * 1.50;
+                spaceWeight = baseSpace * 1.50;
                 interceptWeight = baseIntercept * 0.75;
-                momentumFactor  = baseMomentum * 1.06;
-                noiseScale      = Math.max(0, baseNoise - 0.05);
+                momentumFactor = baseMomentum * 1.06;
+                noiseScale = Math.max(0, baseNoise - 0.05);
             }
             default -> {
                 // Ambusher: balanced approach with slight unpredictability so the
                 // human can't read its angle of attack as easily.
-                spaceWeight     = baseSpace;
+                spaceWeight = baseSpace;
                 interceptWeight = baseIntercept * 1.30;
-                momentumFactor  = baseMomentum * 0.95;
-                noiseScale      = baseNoise + 0.06;
+                momentumFactor = baseMomentum * 0.95;
+                noiseScale = baseNoise + 0.06;
             }
         }
 
-        maxFloodCells  = baseFlood;
+        maxFloodCells = baseFlood;
         lookAheadSteps = baseLookAhead;
     }
 
@@ -136,7 +136,7 @@ public class AvoidDeathAIController implements AIController {
                              0, game.rules.gridHeight);
         }
 
-        Direction best    = null;
+        Direction best = null;
         double    bestScore = Double.NEGATIVE_INFINITY;
 
         for (Direction d : Direction.values()) {
@@ -155,7 +155,7 @@ public class AvoidDeathAIController implements AIController {
             // 2. Hunt score: reward closing distance to target's predicted position.
             //    Moving closer = positive; moving away = penalty (negative).
             double distBefore = dist(player.x, player.y, targetX, targetY);
-            double distAfter  = dist(nx, ny, targetX, targetY);
+            double distAfter = dist(nx, ny, targetX, targetY);
             score += (distBefore - distAfter) * interceptWeight;
 
             // 3. Momentum: require a meaningful improvement before changing direction
@@ -168,7 +168,7 @@ public class AvoidDeathAIController implements AIController {
 
             if (score > bestScore) {
                 bestScore = score;
-                best      = d;
+                best = d;
             }
         }
 
@@ -203,8 +203,8 @@ public class AvoidDeathAIController implements AIController {
 
         genStamp++;
         visitGen[startIdx] = genStamp;
-        bfsQueue[0]        = startIdx;
-        bfsTail            = 1;
+        bfsQueue[0] = startIdx;
+        bfsTail = 1;
 
         int head = 0, count = 0;
         while (head < bfsTail && count < maxFloodCells) {
@@ -224,7 +224,7 @@ public class AvoidDeathAIController implements AIController {
         if (cx < 0 || cx >= COLS || cy < 0 || cy >= ROWS) return;
         int idx = cx * ROWS + cy;
         if (!occupancy[idx] && visitGen[idx] != genStamp) {
-            visitGen[idx]       = genStamp;
+            visitGen[idx] = genStamp;
             bfsQueue[bfsTail++] = idx;
         }
     }

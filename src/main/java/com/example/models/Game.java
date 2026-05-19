@@ -18,9 +18,10 @@ public class Game {
 
     public void update() {
         for (Player player : players) {
-            if (!player.alive) continue;
-            player.move();
-            checkCollisions(player);
+            if (player.alive) player.move();
+        }
+        for (Player player : players) {
+            if (player.alive) checkCollisions(player);
         }
     }
 
@@ -30,12 +31,19 @@ public class Game {
             player.alive = false;
             return;
         }
+
         for (Player p : players) {
-            if (p.trail.contains(player.x, player.y, rules.collisionTolerance)) {
+            int skipTail = (p == player) ? safeSkip() : 0;
+
+            if (p.trail.containsExcludingTail(player.x, player.y, rules.collisionTolerance, skipTail)) {
                 player.alive = false;
                 return;
             }
         }
+    }
+
+    private int safeSkip() {
+        return 20;
     }
 
     public Player getWinner() {
