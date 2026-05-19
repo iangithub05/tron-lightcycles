@@ -11,6 +11,11 @@ public class GameRules {
     // while avoiding false self-collision from the immediately-prior point.
     public double collisionTolerance = 1.5;
 
+    // How many of the most-recent trail points to skip during self-collision.
+    // Default (20) preserves multiplayer behaviour. Singleplayer overrides to 3
+    // so that tight loops correctly kill the player.
+    public int safeSkipCount = 20;
+
     public Difficulty difficulty = Difficulty.MEDIUM;
 
     public GameRules() {}
