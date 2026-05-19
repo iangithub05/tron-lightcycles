@@ -52,12 +52,19 @@ public class HostLobbyScreen {
 
     public StackPane getView() {
         StackPane root = new StackPane();
-        root.setBackground(UIHelper.createBackground("/images/background_5.png"));
+        root.setBackground(UIHelper.createBackground("/images/background_4.png"));
         // Theme.apply(root);
 
         BorderPane screen = new BorderPane();
-        screen.setTop(UIHelper.createNavigationBar("| HOST A GAME", "Welcome, " + app.getPlayerName()));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "QUIT"));
+        HBox topBar = UIHelper.createNavigationBar("| HOST A GAME", "WELCOME, " + app.getPlayerName());
+
+        Label welcomeLabel = (Label) topBar.getChildren().get(2);
+        welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
+
+        screen.setTop(topBar);
+
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT"));
 
         VBox content = new VBox(14);
         content.setPadding(new Insets(18, 38, 18, 38));

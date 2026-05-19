@@ -55,8 +55,15 @@ public class JoinLobbyScreen {
         rootPane.setBackground(UIHelper.createBackground("/images/background_5.png"));
 
         BorderPane screen = new BorderPane();
-        screen.setTop(styledTopBar("| JOIN A GAME"));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "BACK  QUIT"));
+        
+        HBox topBar = UIHelper.createNavigationBar("| JOIN A GAME", "WELCOME, " + app.getPlayerName());
+
+        Label welcomeLabel = (Label) topBar.getChildren().get(2);
+        welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
+
+        screen.setTop(topBar);
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "QUIT"));
 
         VBox card = new VBox(14);
         card.setAlignment(Pos.TOP_CENTER);
@@ -172,7 +179,7 @@ public class JoinLobbyScreen {
 
         BorderPane screen = new BorderPane();
         screen.setTop(styledTopBar("| JOINED LOBBY"));
-        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLEs", "WAITING FOR HOST"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: LIGHT CYCLES", "WAITING FOR HOST"));
 
         HBox main = new HBox(12);
         main.setAlignment(Pos.CENTER);
