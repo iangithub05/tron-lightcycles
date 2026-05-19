@@ -21,8 +21,8 @@ public class SinglePlayerSession extends GameSession {
 
     // Corners of the 1280x720 arena, safely inset from the wall
     private static final double[][] START_POS = {
-        { 80,  80},   // human  – top-left,     heading RIGHT
-        {1200,  80},  // AI #1  – top-right,    heading DOWN
+        { 80,  80}, // human  – top-left,   heading RIGHT
+        {1200,  80},  // AI #1  – top-right,  heading DOWN
         {1200, 640},  // AI #2  – bottom-right, heading LEFT
         { 80,  640},  // AI #3  – bottom-left,  heading UP
     };
@@ -75,9 +75,9 @@ public class SinglePlayerSession extends GameSession {
 
     private void initAI() {
         aiControllers = switch (difficulty) {
-            case EASY   -> new AIController[]{ new SPEasyAI(),   new SPEasyAI(),   new SPEasyAI()   };
+            case EASY   -> new AIController[]{ new SPEasyAI(), new SPEasyAI(), new SPEasyAI()   };
             case MEDIUM -> new AIController[]{ new SPMediumAI(), new SPMediumAI(), new SPMediumAI() };
-            case HARD   -> new AIController[]{ new SPHardAI(),   new SPHardAI(),   new SPHardAI()   };
+            case HARD   -> new AIController[]{ new SPHardAI(), new SPHardAI(), new SPHardAI()   };
         };
     }
 
