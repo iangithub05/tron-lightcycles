@@ -1,6 +1,7 @@
 package com.example.controllers;
 
 import com.example.Main;
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,6 +12,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.util.Duration;
 
 public class AboutScreen {
 
@@ -33,7 +35,8 @@ public class AboutScreen {
         // Target and custom-style the injected right-side player welcome element from UIHelper
         Label welcomeLabel = (Label) topBar.getChildren().get(2);
         welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
-        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 20; -fx-text-fill: white;");
+        welcomeLabel.setFont(Font.font(UIHelper.pixelFont.getFamily(), FontWeight.BOLD, 22));
 
         layoutFrame.setTop(topBar);
 
@@ -116,8 +119,7 @@ public class AboutScreen {
             "-fx-border-radius: 28;"
         );
         
-        backBtn.setOnMouseEntered(e -> backBtn.setOpacity(0.85));
-        backBtn.setOnMouseExited(e -> backBtn.setOpacity(1.0));
+        addButtonEffects(backBtn);
         backBtn.setOnAction(e -> app.showMainMenu());
 
         rightColumn.getChildren().addAll(titleMain, titleSub, instructions, backBtn);
@@ -153,5 +155,25 @@ public class AboutScreen {
         
         keyCap.getChildren().add(label);
         return keyCap;
+    }
+
+    private void addButtonEffects(Button targetButton) {
+        ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), targetButton);
+        
+        targetButton.setOnMouseEntered(e -> {
+            targetButton.setOpacity(0.85);
+            scaleTransition.stop();
+            scaleTransition.setToX(1.05); // Standard 5% scale expansion outward
+            scaleTransition.setToY(1.05);
+            scaleTransition.play();
+        });
+
+        targetButton.setOnMouseExited(e -> {
+            targetButton.setOpacity(1.0);
+            scaleTransition.stop();
+            scaleTransition.setToX(1.0); // Snap back cleanly to standard scale boundaries
+            scaleTransition.setToY(1.0);
+            scaleTransition.play();
+        });
     }
 }
