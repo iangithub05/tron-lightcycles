@@ -18,7 +18,7 @@ public final class RoomCode {
         } catch (Exception e) {
             return "INVALID";
         }
-    }
+   }
 
     public static String[] decode(String code) throws Exception {
         long combined = Long.parseLong(code.toLowerCase(), 36);
@@ -27,7 +27,7 @@ public final class RoomCode {
         String ip = ((ipInt >> 24) & 0xFF) + "."
                   + ((ipInt >> 16) & 0xFF) + "."
                   + ((ipInt >>  8) & 0xFF) + "."
-                  +  (ipInt        & 0xFF);
+                  +  (ipInt & 0xFF);
         return new String[]{ ip, String.valueOf(port) };
     }
 

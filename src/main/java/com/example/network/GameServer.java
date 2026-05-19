@@ -14,7 +14,7 @@ import java.util.function.*;
 public class GameServer {
 
     private static final int GAME_TICK_MS = 16;
-    private static final int NETWORK_SEND_MS = 50;
+    private static final int NETWORK_SEND_MS = 33;
     private static final int NEXT_ROUND_DELAY_MS = 6250;
 
     public Consumer<Integer>          onPlayerCountChanged;
@@ -51,8 +51,10 @@ public class GameServer {
         ClientConn(int slot, Socket socket) throws IOException {
             this.slot = slot;
             this.socket = socket;
+            this.socket.setTcpNoDelay(true);
+            this.socket.setKeepAlive(true);
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+            this.out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
         }
 
         void send(String msg) {
@@ -73,7 +75,8 @@ public class GameServer {
 
         Thread acceptThread = new Thread(() -> {
             try {
-                serverSocket = new ServerSocket(port);
+                serverSocket = new ServerSocket(port, 50, InetAddress.getByName("0.0.0.0"));
+                serverSocket.setReuseAddress(true);
                 while (!serverSocket.isClosed()) {
                     Socket socket = serverSocket.accept();
                     int slot = clients.size() + 1;
@@ -218,7 +221,7 @@ public class GameServer {
 
     private void buildGame() {
         multiplayerGame = new MultiplayerGame(settings, getFilledPlayerNames());
-        latestSnapshot = multiplayerGame.snapshot(false);
+        latestSnapshot = multiplayerGame.snapshot(false).copyWithoutTrail();
         lastNetworkSendNanos = 0L;
     }
 
@@ -247,7 +250,6 @@ public class GameServer {
             try {
                 readInputs();
                 multiplayerGame.update();
-                latestSnapshot = multiplayerGame.snapshot(false);
                 broadcastStateIfDue();
 
                 if (multiplayerGame.isRoundOver()) {
@@ -303,7 +305,7 @@ public class GameServer {
         } else {
             gameExecutor.schedule(() -> {
                 multiplayerGame.resetRound(multiplayerGame.getPlayerCount());
-                latestSnapshot = multiplayerGame.snapshot(false);
+                latestSnapshot = multiplayerGame.snapshot(false).copyWithoutTrail();
                 lastNetworkSendNanos = 0L;
                 beginGameLoop();
             }, NEXT_ROUND_DELAY_MS, TimeUnit.MILLISECONDS);
