@@ -44,7 +44,7 @@ public class JoinLobbyScreen {
     public StackPane getView() {
         rootPane = new StackPane();
         rootPane.setAlignment(Pos.CENTER);
-        Theme.apply(rootPane);
+        // Theme.apply(rootPane);
         rootPane.getStyleClass().add("screen-root");
 
         showConnectView();
