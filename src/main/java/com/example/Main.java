@@ -30,8 +30,8 @@ public class Main extends Application {
         stage.setFullScreen(true);
         stage.setFullScreenExitHint("");
         stage.show();
-        // showAskName();
-        showHostLobby();
+        showAskName();
+        // showHostLobby();
         Platform.runLater(() -> scene.getRoot().requestFocus());
     }
 

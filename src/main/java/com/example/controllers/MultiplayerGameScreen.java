@@ -97,9 +97,13 @@ public class MultiplayerGameScreen {
         canvas = new Canvas(settings.gridWidth, settings.gridHeight);
         trailGc = trailCanvas.getGraphicsContext2D();
         gc = canvas.getGraphicsContext2D();
+        trailGc.setImageSmoothing(false);
+        gc.setImageSmoothing(false);
         clearTrailCanvas();
 
         Pane canvasPane = new Pane(trailCanvas, canvas);
+        canvasPane.setPrefSize(settings.gridWidth, settings.gridHeight);
+        canvasPane.setMinSize(settings.gridWidth, settings.gridHeight);
         canvasPane.setMaxSize(settings.gridWidth, settings.gridHeight);
         canvasPane.setStyle("-fx-border-color: #5f5f78; -fx-border-width: 3; -fx-background-color: black;");
 
