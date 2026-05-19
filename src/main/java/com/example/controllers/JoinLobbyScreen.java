@@ -52,62 +52,63 @@ public class JoinLobbyScreen {
     }
 
     private void showConnectView() {
-        Label nav = new Label("MAIN MENU  /  MULTIPLAYER  /  JOIN A GAME");
-        nav.getStyleClass().add("nav-title");
+        rootPane.setBackground(UIHelper.createBackground("/images/background_5.png"));
 
-        Label title = new Label("JOIN A GAME");
-        title.getStyleClass().add("game-title");
+        BorderPane screen = new BorderPane();
+        screen.setTop(styledTopBar("| JOIN A GAME"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: Light Cycles", "BACK  QUIT"));
 
+        VBox card = new VBox(14);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPadding(new Insets(24, 95, 24, 95));
+        card.setMaxWidth(725);
+        card.setStyle(panelStyle());
+
+        Label title = bigTitle("JOIN A GAME", 34);
         Label subtitle = new Label("enter a room code or auto-discover on LAN");
-        subtitle.getStyleClass().add("screen-subtitle");
+        subtitle.setStyle("-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 10px;");
 
-        Label codeLabel = new Label("Room Code");
-        codeLabel.getStyleClass().add("tron-label");
-
+        Label codeLabel = labelWhite("Room Code", 15);
         TextField codeField = new TextField();
-        codeField.setPromptText("e.g. 1A 2B 3C");
-        codeField.getStyleClass().add("tron-input");
-        codeField.setStyle("-fx-pref-width: 300px; -fx-min-width: 300px;");
+        codeField.setPromptText("eg. 1A 2B 3C");
+        codeField.setPrefSize(410, 36);
+        codeField.setStyle(inputStyle());
         codeField.textProperty().addListener((o, a, b) -> {
             String up = b.toUpperCase();
             if (!up.equals(b)) { codeField.setText(up); codeField.positionCaret(up.length()); }
         });
 
-        Button connectBtn = new Button("CONNECT");
-        connectBtn.getStyleClass().add("tron-btn");
-        connectBtn.setStyle("-fx-pref-width: 140px; -fx-min-width: 140px;");
-
+        Button connectBtn = styledButton("CONNECT", 120, 36, "#17274a", "#111d39");
         HBox codeRow = new HBox(8, codeField, connectBtn);
         codeRow.setAlignment(Pos.CENTER_LEFT);
 
-        Label orLabel = new Label("─────  or auto-discover  ─────");
-        orLabel.setStyle("-fx-text-fill: #4a5568; -fx-font-family: 'Courier New', monospace;"
-                + " -fx-font-size: 11px;");
+        VBox discoveredList = new VBox(7);
+        discoveredList.setPrefHeight(52);
+        discoveredList.setPadding(new Insets(13));
+        discoveredList.setStyle("-fx-background-color: #17274a; -fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8;");
+        Label noneInitial = new Label("No games found on LAN.");
+        noneInitial.setStyle("-fx-text-fill: #8f98b3; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 9px;");
+        discoveredList.getChildren().add(noneInitial);
 
-        VBox discoveredList = new VBox(4);
-        Button scanBtn = new Button("⟳  SCAN LAN FOR GAMES");
-        scanBtn.getStyleClass().add("tron-btn");
-
+        Button scanBtn = styledButton("SCAN LAN FOR GAMES", 535, 36, "#17274a", "#111d39");
         scanBtn.setOnAction(e -> {
             discoveredList.getChildren().clear();
-            Label scanning = new Label("scanning…");
-            scanning.setStyle("-fx-text-fill: #718096; -fx-font-family: 'Courier New', monospace;");
+            Label scanning = new Label("Scanning...");
+            scanning.setStyle("-fx-text-fill: #8f98b3; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 9px;");
             discoveredList.getChildren().add(scanning);
             scanBtn.setDisable(true);
             new Thread(() -> {
                 List<LanDiscovery.DiscoveredGame> found =
                     LanDiscovery.scan(game -> Platform.runLater(() -> {
                         discoveredList.getChildren().remove(scanning);
-                        discoveredList.getChildren().add(
-                            makeDiscoveredRow(game, codeField, connectBtn));
+                        discoveredList.getChildren().add(makeDiscoveredRow(game, codeField, connectBtn));
                     }));
                 Platform.runLater(() -> {
                     scanBtn.setDisable(false);
                     if (found.isEmpty()) {
                         discoveredList.getChildren().clear();
-                        Label none = new Label("no games found on LAN");
-                        none.setStyle("-fx-text-fill: #718096;"
-                                + " -fx-font-family: 'Courier New', monospace;");
+                        Label none = new Label("No games found on LAN.");
+                        none.setStyle("-fx-text-fill: #8f98b3; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 9px;");
                         discoveredList.getChildren().add(none);
                     }
                 });
@@ -115,7 +116,7 @@ public class JoinLobbyScreen {
         });
 
         Label connectStatus = new Label("");
-        connectStatus.getStyleClass().add("status-label");
+        connectStatus.setStyle("-fx-text-fill: white; -fx-font-family: 'Courier New'; -fx-font-size: 12px;");
 
         connectBtn.setOnAction(e -> {
             String raw = codeField.getText().trim().replace(" ", "");
@@ -123,13 +124,12 @@ public class JoinLobbyScreen {
             try {
                 String[] decoded = RoomCode.decode(raw);
                 String ip = decoded[0];
-                int    port = Integer.parseInt(decoded[1]);
-                connectStatus.setText("● connecting to " + ip + ":" + port + "…");
+                int port = Integer.parseInt(decoded[1]);
+                connectStatus.setText("connecting to " + ip + ":" + port + "...");
                 connectBtn.setDisable(true);
                 scanBtn.setDisable(true);
 
-                client.onConnected = slot -> Platform.runLater(() ->
-                    showLobbyView(raw, ip, port));
+                client.onConnected = slot -> Platform.runLater(() -> showLobbyView(raw, ip, port));
                 client.onLobbyUpdate = (names, settings) -> {
                     pendingLobbyNames = names;
                     pendingLobbySettings = settings;
@@ -153,120 +153,113 @@ public class JoinLobbyScreen {
         });
         codeField.setOnAction(e -> connectBtn.fire());
 
-        Button back = new Button("←  BACK");
-        back.getStyleClass().add("tron-btn-secondary");
+        Button back = styledButton("BACK", 120, 34, "#111827", "#0a0f18");
         back.setOnAction(e -> { client.close(); app.showMultiplayer(); });
 
-        VBox content = new VBox(14,
-            nav, title, subtitle,
-            codeLabel, codeRow,
-            orLabel, scanBtn, discoveredList,
-            connectStatus,
-            Theme.spacer(6),
-            Theme.divider(),
-            back
-        );
-        content.setAlignment(Pos.TOP_LEFT);
-        content.setMaxWidth(460);
-        content.setMinWidth(460);
+        VBox form = new VBox(8, codeLabel, codeRow, thinLine(), scanBtn, discoveredList, connectStatus, back);
+        form.setAlignment(Pos.CENTER_LEFT);
+        form.setMaxWidth(535);
 
-        VBox wrapper = new VBox(content);
-        wrapper.setAlignment(Pos.TOP_CENTER);
-        wrapper.setPadding(new Insets(40));
-
-        rootPane.getChildren().setAll(wrapper);
+        card.getChildren().addAll(title, subtitle, Theme.spacer(14), form);
+        screen.setCenter(card);
+        BorderPane.setAlignment(card, Pos.CENTER);
+        BorderPane.setMargin(card, new Insets(16));
+        rootPane.getChildren().setAll(screen);
     }
 
-
     private void showLobbyView(String roomCode, String ip, int port) {
-        Label nav = new Label("MAIN MENU  /  MULTIPLAYER  /  JOINED LOBBY");
-        nav.getStyleClass().add("nav-title");
+        rootPane.setBackground(UIHelper.createBackground("/images/background_4.png"));
 
-        Label title = new Label("JOINED LOBBY");
-        title.getStyleClass().add("game-title");
+        BorderPane screen = new BorderPane();
+        screen.setTop(styledTopBar("| JOINED LOBBY"));
+        screen.setBottom(UIHelper.createNavigationBar("TRON: Light Cycles", "WAITING FOR HOST"));
 
-        Label subtitle = new Label("waiting for the host to start the game");
-        subtitle.getStyleClass().add("screen-subtitle");
+        HBox main = new HBox(12);
+        main.setAlignment(Pos.CENTER);
+        main.setPadding(new Insets(18, 38, 18, 38));
 
-        roomCodeLabel = new Label(formatCode(roomCode));
-        roomCodeLabel.setStyle(
-            "-fx-text-fill: #63b3ed; -fx-font-size: 32px; -fx-font-weight: bold;"
-            + " -fx-font-family: 'Courier New', monospace;");
+        VBox left = new VBox(10);
+        left.setAlignment(Pos.TOP_CENTER);
+        left.setPrefWidth(540);
 
-        hostInfoLabel = new Label("host IP: " + ip + "  •  port: " + port);
-        hostInfoLabel.getStyleClass().add("tron-label-dim");
+        VBox roomPanel = new VBox(10);
+        roomPanel.setAlignment(Pos.CENTER);
+        roomPanel.setPrefSize(540, 105);
+        roomPanel.setPadding(new Insets(14, 18, 14, 18));
+        roomPanel.setStyle(panelStyle());
 
-        Label readOnly = new Label("🔒  room code  —  read only");
-        readOnly.setStyle("-fx-text-fill: #4a5568; -fx-font-family: 'Courier New', monospace;"
-                + " -fx-font-size: 11px;");
+        Label roomTitle = bigTitle("JOINED LOBBY", 27);
+        Label waitingText = labelWhite("WAITING FOR HOST TO START", 11);
 
-        VBox codeBox = new VBox(4, roomCodeLabel, hostInfoLabel, readOnly);
-        codeBox.setAlignment(Pos.TOP_LEFT);
-        codeBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 16 20 16 20;");
+        roomCodeLabel = pillLabel(formatCode(roomCode), 245, 30);
+        hostInfoLabel = labelWhite("HOST  " + ip + "  :  " + port, 9);
 
-        statusLabel = new Label("● connected — waiting for host to start…");
-        statusLabel.getStyleClass().add("status-label");
+        VBox roomInfo = new VBox(4, roomCodeLabel, hostInfoLabel);
+        roomInfo.setAlignment(Pos.CENTER);
 
-        Label settingsTitle = new Label("GAME SETTINGS  (set by host)");
-        settingsTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
-                + " -fx-font-family: 'Courier New', monospace;");
+        roomPanel.getChildren().addAll(roomTitle, waitingText, roomInfo);
+
+        HBox middle = new HBox(10);
+        middle.setAlignment(Pos.TOP_CENTER);
+
+        VBox playersPanel = new VBox(7);
+        playersPanel.setAlignment(Pos.TOP_LEFT);
+        playersPanel.setPadding(new Insets(14, 16, 14, 16));
+        playersPanel.setPrefSize(265, 230);
+        playersPanel.setStyle(panelStyle());
+
+        Label playersTitle = labelWhite("PLAYERS IN LOBBY", 12);
+        statusLabel = labelWhite("CONNECTED - WAITING", 8);
+        playerList = new VBox(6);
+        addLoadingRow(playerList, "loading players...");
+
+        playersPanel.getChildren().addAll(playersTitle, statusLabel, playerList);
+
+        VBox settingsPanel = new VBox(8);
+        settingsPanel.setAlignment(Pos.TOP_LEFT);
+        settingsPanel.setPadding(new Insets(14, 16, 14, 16));
+        settingsPanel.setPrefSize(265, 230);
+        settingsPanel.setStyle(panelStyle());
+
+        Label settingsTitle = labelWhite("GAME SETTINGS", 12);
+        Label lockedText = labelWhite("SET BY HOST", 8);
 
         GridPane settingsGrid = new GridPane();
         settingsGrid.setHgap(12);
         settingsGrid.setVgap(8);
-        addReadOnlyRow(settingsGrid, 0, "Max players", "…");
-        addReadOnlyRow(settingsGrid, 1, "Games to win", "…");
-        addReadOnlyRow(settingsGrid, 2, "Time limit (sec)", "…");
-        addReadOnlyRow(settingsGrid, 3, "Speed", "…");
-        addReadOnlyRow(settingsGrid, 4, "Grid size", "…");
+        addReadOnlyRow(settingsGrid, 0, "Max Players", "...");
+        addReadOnlyRow(settingsGrid, 1, "Games To Win", "...");
+        addReadOnlyRow(settingsGrid, 2, "Time Limit", "...");
+        addReadOnlyRow(settingsGrid, 3, "Speed", "...");
+        addReadOnlyRow(settingsGrid, 4, "Grid Size", "...");
 
-        VBox settingsBox = new VBox(8, settingsTitle, settingsGrid);
-        settingsBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
+        settingsPanel.getChildren().addAll(settingsTitle, lockedText, settingsGrid);
 
-        Label playersTitle = new Label("PLAYERS IN LOBBY");
-        playersTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
-                + " -fx-font-family: 'Courier New', monospace;");
+        middle.getChildren().addAll(playersPanel, settingsPanel);
 
-        playerList = new VBox(4);
-        addLoadingRow(playerList, "loading players…");
-
-        VBox playersBox = new VBox(8, playersTitle, playerList);
-        playersBox.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
-
-        Button waitingBtn = new Button("⏳  WAITING FOR HOST TO START…");
-        waitingBtn.getStyleClass().add("tron-btn");
+        Button waitingBtn = styledButton("WAITING FOR HOST...", 260, 42, "#23402c", "#16261b");
         waitingBtn.setDisable(true);
-        waitingBtn.setStyle("-fx-opacity: 0.6;");
+        waitingBtn.setOpacity(0.75);
 
-        Button back = new Button("←  LEAVE LOBBY");
-        back.getStyleClass().add("tron-btn-secondary");
-        back.setOnAction(e -> { client.close(); app.showMultiplayer(); });
+        Button leaveBtn = styledButton("LEAVE LOBBY", 260, 42, "#111827", "#0a0f18");
+        leaveBtn.setOnAction(e -> {
+            client.close();
+            app.showMultiplayer();
+        });
 
-        VBox left = new VBox(14,
-            nav, title, subtitle,
-            codeBox,
-            statusLabel,
-            settingsBox,
-            playersBox,
-            Theme.spacer(6),
-            waitingBtn,
-            Theme.divider(),
-            back
-        );
-        left.setAlignment(Pos.TOP_LEFT);
-        left.setMaxWidth(460);
-        left.setMinWidth(460);
+        HBox buttons = new HBox(10, leaveBtn, waitingBtn);
+        buttons.setAlignment(Pos.CENTER);
 
-        VBox chatBox = buildChatPanel();
+        left.getChildren().addAll(roomPanel, middle, buttons);
 
-        HBox root = new HBox(24, left, chatBox);
-        root.setAlignment(Pos.TOP_CENTER);
-        root.setPadding(new Insets(40));
+        VBox chatPanel = buildChatPanel();
+        chatPanel.setPrefWidth(300);
+        chatPanel.setMinWidth(300);
+        chatPanel.setMaxWidth(300);
 
-        rootPane.getChildren().setAll(root);
+        main.getChildren().addAll(left, chatPanel);
+        screen.setCenter(main);
+        rootPane.getChildren().setAll(screen);
 
         client.onConnected = null;
 
@@ -274,12 +267,15 @@ public class JoinLobbyScreen {
             currentSettings = settings;
             refreshPlayerList(names);
             refreshSettingsGrid(settingsGrid, settings);
+            int maxP = settings != null ? settings.maxPlayers : 4;
+            statusLabel.setText("CONNECTED  (" + names.size() + "/" + maxP + ")");
         });
 
         if (pendingLobbyNames != null && pendingLobbySettings != null) {
             currentSettings = pendingLobbySettings;
             refreshPlayerList(pendingLobbyNames);
             refreshSettingsGrid(settingsGrid, pendingLobbySettings);
+            statusLabel.setText("CONNECTED  (" + pendingLobbyNames.size() + "/" + pendingLobbySettings.maxPlayers + ")");
         }
 
         client.onSettingsChanged = settings -> Platform.runLater(() -> {
@@ -293,16 +289,16 @@ public class JoinLobbyScreen {
 
         client.onPlayerDisconnected = name -> Platform.runLater(() -> {
             appendChat("SYSTEM", name + " disconnected from the lobby.");
-            statusLabel.setText("⚠  " + name + " disconnected");
+            statusLabel.setText("PLAYER LEFT - WAITING");
         });
 
         client.onGameStart = () -> Platform.runLater(() ->
             app.showMultiplayerClientGame(client, currentSettings, myName));
 
         client.onError = err -> Platform.runLater(() ->
-            statusLabel.setText("✕ error: " + err));
+            statusLabel.setText("ERROR: " + err));
 
-        appendChat("SYSTEM", "Connected! Waiting for the host to start…");
+        appendChat("SYSTEM", "Connected. Waiting for host to start.");
     }
 
 
@@ -405,27 +401,34 @@ public class JoinLobbyScreen {
     }
 
     private VBox buildChatPanel() {
-        Label chatTitle = new Label("LOBBY CHAT");
-        chatTitle.setStyle("-fx-text-fill: #a0aec0; -fx-font-size: 11px;"
-                + " -fx-font-family: 'Courier New', monospace;");
+        Label chatTitle = bigTitle("LOBBY CHAT", 20);
+        chatTitle.setAlignment(Pos.CENTER);
+        chatTitle.setPrefSize(300, 46);
+        chatTitle.setStyle(panelStyle()
+                + "-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily()
+                + "'; -fx-font-size: 20px; -fx-font-weight: bold;");
 
-        chatMessages = new VBox(4);
-        chatMessages.setPadding(new Insets(8));
+        chatMessages = new VBox(5);
+        chatMessages.setPadding(new Insets(10));
 
         chatScroll = new ScrollPane(chatMessages);
         chatScroll.setFitToWidth(true);
-        chatScroll.setPrefHeight(280);
-        chatScroll.setStyle("-fx-background: #0d1117; -fx-background-color: #0d1117;");
+        chatScroll.setPrefSize(300, 282);
         chatScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        chatScroll.setStyle(
+            "-fx-background: rgba(20, 22, 35, 0.72);" +
+            "-fx-background-color: rgba(20, 22, 35, 0.72);" +
+            "-fx-border-color: black;" +
+            "-fx-border-radius: 8;" +
+            "-fx-background-radius: 8;"
+        );
 
         chatInput = new TextField();
-        chatInput.setPromptText("type a message…");
-        chatInput.getStyleClass().add("tron-input");
-        chatInput.setStyle("-fx-pref-width: 260px; -fx-min-width: 260px;");
+        chatInput.setPromptText("Enter message...");
+        chatInput.setPrefSize(226, 32);
+        chatInput.setStyle(inputStyle());
 
-        Button sendBtn = new Button("SEND");
-        sendBtn.getStyleClass().add("tron-btn");
-        sendBtn.setStyle("-fx-pref-width: 80px; -fx-min-width: 80px;");
+        Button sendBtn = styledButton(">", 44, 32, "#17274a", "#111d39");
 
         Runnable doSend = () -> {
             String msg = chatInput.getText().trim();
@@ -437,15 +440,19 @@ public class JoinLobbyScreen {
         chatInput.setOnAction(e -> doSend.run());
 
         HBox inputRow = new HBox(8, chatInput, sendBtn);
-        inputRow.setAlignment(Pos.CENTER_LEFT);
+        inputRow.setAlignment(Pos.CENTER);
 
-        VBox panel = new VBox(8, chatTitle, chatScroll, inputRow);
-        panel.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 10 15 10 15;");
-        panel.setMinWidth(300);
-        panel.setMaxWidth(300);
+        VBox chatBody = new VBox(8, chatScroll, inputRow);
+        chatBody.setAlignment(Pos.TOP_CENTER);
+        chatBody.setPadding(new Insets(10));
+        chatBody.setPrefSize(300, 342);
+        chatBody.setStyle(panelStyle());
+
+        VBox panel = new VBox(8, chatTitle, chatBody);
+        panel.setAlignment(Pos.TOP_CENTER);
         return panel;
     }
+
 
     private void appendChat(String name, String msg) {
         if (chatMessages == null) return;
@@ -481,6 +488,70 @@ public class JoinLobbyScreen {
         row.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
                 + " -fx-border-width: 1; -fx-padding: 8 12 8 12;");
         return row;
+    }
+
+
+    private HBox styledTopBar(String leftText) {
+        HBox topBar = UIHelper.createNavigationBar(leftText, "Welcome, " + myName);
+        Label welcome = (Label) topBar.getChildren().get(2);
+        welcome.setPadding(new Insets(12, 26, 12, 26));
+        welcome.setStyle("-fx-background-color: linear-gradient(to right, #9b2447, #6d1831);"
+                + "-fx-background-radius: 12; -fx-border-color: #4d1020; -fx-border-radius: 12;"
+                + "-fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 14px;"
+                + "-fx-font-weight: bold; -fx-text-fill: white;");
+        return topBar;
+    }
+
+    private static Label bigTitle(String text, int size) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: " + size + "px; -fx-font-weight: bold;");
+        return l;
+    }
+
+    private static Label labelWhite(String text, int size) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: " + size + "px; -fx-font-weight: bold;");
+        return l;
+    }
+
+    private static Label pillLabel(String text, int width, int height) {
+        Label label = new Label(text);
+        label.setAlignment(Pos.CENTER);
+        label.setPrefSize(width, height);
+        label.setStyle("-fx-background-color: linear-gradient(to right, #9b2447, #6d1831);"
+                + "-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4d1020;"
+                + "-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "';"
+                + "-fx-font-size: 11px; -fx-font-weight: bold;");
+        return label;
+    }
+
+    private static Button styledButton(String text, int w, int h, String top, String bottom) {
+        Button b = new Button(text);
+        b.setCursor(javafx.scene.Cursor.HAND);
+        b.setPrefSize(w, h);
+        b.setStyle("-fx-background-color: linear-gradient(to bottom, " + top + ", " + bottom + ");"
+                + "-fx-text-fill: white; -fx-font-family: '" + UIHelper.pixelFont.getFamily() + "';"
+                + "-fx-font-size: 12px; -fx-font-weight: bold; -fx-background-radius: 8;"
+                + "-fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1;");
+        return b;
+    }
+
+    private static Region thinLine() {
+        Region r = new Region();
+        r.setPrefHeight(2);
+        r.setStyle("-fx-background-color: rgba(255,255,255,0.35);");
+        return r;
+    }
+
+    private static String inputStyle() {
+        return "-fx-background-color: #17274a; -fx-text-fill: white; -fx-prompt-text-fill: #8f98b3;"
+                + "-fx-font-family: '" + UIHelper.pixelFont.getFamily() + "'; -fx-font-size: 12px;"
+                + "-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: black;";
+    }
+
+    private static String panelStyle() {
+        return "-fx-background-color: rgba(20, 22, 35, 0.72);"
+             + "-fx-background-radius: 8; -fx-border-color: black; -fx-border-radius: 8; -fx-border-width: 1;";
     }
 
     private static String formatCode(String code) {
