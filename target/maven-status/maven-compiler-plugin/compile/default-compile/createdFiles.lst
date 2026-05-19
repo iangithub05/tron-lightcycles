@@ -1,8 +1,4 @@
-com/example/models/GameSnapshot.class
-com/example/models/PlayerSnapshot.class
-com/example/services/AvoidDeathAIController$1.class
-com/example/models/GameSnapshot$Phase.class
-com/example/models/Player$1.class
-com/example/controllers/MultiplayerGameScreen$2.class
-com/example/models/MultiplayerGame.class
-com/example/services/SinglePlayerSession$1.class
+com\example\models\Player$1.class
+com\example\services\SinglePlayerSession$1.class
+com\example\controllers\MultiplayerGameScreen$2.class
+com\example\services\AvoidDeathAIController$1.class

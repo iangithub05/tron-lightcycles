@@ -58,6 +58,7 @@ public class MultiplayerGameScreen {
     private final Map<Integer, double[]> lastDrawnTrailPoint = new HashMap<>();
     private final Map<Integer, PlayerSnapshot> latestHeads = new HashMap<>();
     private volatile List<PlayerSnapshot> queuedClientSnapshots;
+    private long lastSnapshotNanos = 0L;
     private int[] serverTrailDrawCount;
     private String lastSidebarSignature = "";
 
@@ -267,6 +268,7 @@ public class MultiplayerGameScreen {
         List<PlayerSnapshot> snaps = queuedClientSnapshots;
         if (snaps != null) {
             queuedClientSnapshots = null;
+            lastSnapshotNanos = System.nanoTime();
             applyClientSnapshots(snaps);
         }
 
@@ -275,10 +277,28 @@ public class MultiplayerGameScreen {
         drawPendingClientTrailPoints();
         clearDynamicCanvas();
 
+        // Dead reckoning: extrapolate head position for the time elapsed since
+        // the last received snapshot, capped at 50ms to avoid runaway prediction.
+        double elapsedSecs = Math.min(
+                (System.nanoTime() - lastSnapshotNanos) / 1_000_000_000.0, 0.05);
+        double pixelsPerSec = settings.speed * (1000.0 / 16.0);
+
         for (Map.Entry<Integer, PlayerSnapshot> entry : latestHeads.entrySet()) {
             int slot = entry.getKey();
             PlayerSnapshot s = entry.getValue();
-            if (s.alive) drawHead(s.x, s.y, PLAYER_COLORS[slot % PLAYER_COLORS.length]);
+            if (!s.alive) continue;
+            double px = s.x;
+            double py = s.y;
+            if (s.direction != null && lastSnapshotNanos > 0) {
+                double dist = pixelsPerSec * elapsedSecs;
+                switch (s.direction) {
+                    case UP    -> py -= dist;
+                    case DOWN  -> py += dist;
+                    case LEFT  -> px -= dist;
+                    case RIGHT -> px += dist;
+                }
+            }
+            drawHead(px, py, PLAYER_COLORS[slot % PLAYER_COLORS.length]);
         }
 
         drawMultiplayerOverlay();
@@ -529,6 +549,7 @@ public class MultiplayerGameScreen {
         pendingClientTrailPoints.clear();
         lastDrawnTrailPoint.clear();
         latestHeads.clear();
+        lastSnapshotNanos = 0L;
         serverTrailDrawCount = null;
         lastSidebarSignature = "";
         if (roundStatusLabel != null) roundStatusLabel.setText("Round active");

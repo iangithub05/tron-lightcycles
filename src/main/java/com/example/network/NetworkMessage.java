@@ -1,5 +1,6 @@
 package com.example.network;
 
+import com.example.models.Direction;
 import com.example.models.GameSnapshot;
 import com.example.models.PlayerSnapshot;
 
@@ -61,7 +62,8 @@ public class NetworkMessage {
           .append(ps.y).append(':')
           .append(ps.alive ? '1' : '0').append(':')
           .append(ps.score).append(':')
-          .append(ps.name == null ? "" : ps.name.replace(":", "").replace(";", "")).append(':');
+          .append(ps.name == null ? "" : ps.name.replace(":", "").replace(";", "")).append(':')
+          .append(ps.direction != null ? ps.direction.name() : "").append(':');
 
         if (ps.trailPoints != null) {
             for (int i = 0; i < ps.trailPoints.size(); i++) {
@@ -74,7 +76,8 @@ public class NetworkMessage {
     }
 
     public static PlayerSnapshot decodePlayerSnapshot(String enc) {
-        String[] main = enc.split(":", 7);
+        // format: slot:x:y:alive:score:name:direction:trailPoints
+        String[] main = enc.split(":", 8);
         PlayerSnapshot ps = new PlayerSnapshot();
         ps.slot = Integer.parseInt(main[0]);
         ps.x = Double.parseDouble(main[1]);
@@ -82,10 +85,15 @@ public class NetworkMessage {
         ps.alive = "1".equals(main[3]);
         ps.score = main.length > 4 && !main[4].isEmpty() ? Integer.parseInt(main[4]) : 0;
         ps.name = main.length > 5 ? main[5] : "P" + (ps.slot + 1);
+        try {
+            ps.direction = main.length > 6 && !main[6].isEmpty()
+                    ? Direction.valueOf(main[6]) : null;
+        } catch (Exception ignored) { ps.direction = null; }
         ps.trailPoints = new ArrayList<>();
 
-        if (main.length > 6 && !main[6].isEmpty()) {
-            for (String pair : main[6].split(TRAIL_POINT_SEPARATOR)) {
+        String trailData = main.length > 7 ? main[7] : "";
+        if (!trailData.isEmpty()) {
+            for (String pair : trailData.split(TRAIL_POINT_SEPARATOR)) {
                 String[] xy = pair.split(",", 2);
                 if (xy.length == 2) {
                     try {
