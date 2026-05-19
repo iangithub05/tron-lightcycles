@@ -1,6 +1,5 @@
 package com.example.services;
 
-import com.example.models.Difficulty;
 import com.example.models.Direction;
 import com.example.models.Game;
 import com.example.models.GameMode;

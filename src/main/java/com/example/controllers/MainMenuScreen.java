@@ -1,17 +1,10 @@
 package com.example.controllers;
 
 import com.example.Main;
-import com.example.ui.Theme;
-import javafx.animation.TranslateTransition;
-import javafx.scene.Cursor;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.util.Duration;
 
 public class MainMenuScreen {
 

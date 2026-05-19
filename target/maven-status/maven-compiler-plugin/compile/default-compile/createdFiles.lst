@@ -26,8 +26,8 @@ com/example/controllers/MultiplayerGameScreen$2.class
 com/example/controllers/SingleplayerScreen.class
 com/example/controllers/MatchOverScreen.class
 com/example/network/GameClient.class
-com/example/controllers/HostLobbyScreen.class
 com/example/models/Difficulty.class
+com/example/controllers/HostLobbyScreen.class
 com/example/models/Game.class
 com/example/controllers/GameOverScreen.class
 com/example/ui/Theme.class

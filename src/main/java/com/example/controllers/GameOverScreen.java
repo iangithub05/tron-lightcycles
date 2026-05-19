@@ -9,6 +9,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 public class GameOverScreen {
 
@@ -31,19 +33,13 @@ public class GameOverScreen {
 
         // --- Top Bar Layout ---
         // Generates the exact top-bar layout matching your title text formatting rules
-        HBox topBar = UIHelper.createNavigationBar("|  GAME OVER", "Welcome, " + app.getPlayerName());
+        HBox topBar = UIHelper.createNavigationBar("|  GAME OVER", "WELCOME, " + app.getPlayerName());
         
         // Grab the username badge element directly to replicate your maroon pill design
         Label welcomeLabel = (Label) topBar.getChildren().get(2);
         welcomeLabel.setPadding(new Insets(12, 30, 12, 30));
-        welcomeLabel.setStyle(
-            "-fx-background-color: linear-gradient(to right, #801a33, #4d1020);" +
-            "-fx-background-radius: 15;" +
-            "-fx-font-family: '" + UIHelper.pixelFont.getFamily() + "';" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-text-fill: white;"
-        );
+        welcomeLabel.setStyle("-fx-background-color: linear-gradient(to right, #801a33, #4d1020); -fx-background-radius: 15;");
+
         layoutStructure.setTop(topBar);
 
         // --- Centered Status Display Container ---
