@@ -17,12 +17,12 @@ public class LobbySettings {
     public static LobbySettings decode(String s) {
         String[] p = s.split(",");
         LobbySettings ls = new LobbySettings();
-        ls.maxPlayers    = Integer.parseInt(p[0]);
-        ls.gamesToWin    = Integer.parseInt(p[1]);
+        ls.maxPlayers = Integer.parseInt(p[0]);
+        ls.gamesToWin = Integer.parseInt(p[1]);
         ls.timeLimitSecs = Integer.parseInt(p[2]);
-        ls.speed         = Double.parseDouble(p[3]);
-        ls.gridWidth     = Integer.parseInt(p[4]);
-        ls.gridHeight    = Integer.parseInt(p[5]);
+        ls.speed = Double.parseDouble(p[3]);
+        ls.gridWidth = Integer.parseInt(p[4]);
+        ls.gridHeight = Integer.parseInt(p[5]);
         return ls;
     }
 

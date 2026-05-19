@@ -15,7 +15,7 @@ public class MatchOverScreen {
     private final int[]  scores;
 
     public MatchOverScreen(Main app, String result, int[] scores) {
-        this.app    = app;
+        this.app = app;
         this.result = result;
         this.scores = scores;
     }

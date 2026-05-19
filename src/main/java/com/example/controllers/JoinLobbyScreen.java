@@ -18,7 +18,7 @@ import java.util.List;
 public class JoinLobbyScreen {
 
     private final Main app;
-    private final GameClient client  = new GameClient();
+    private final GameClient client = new GameClient();
     private final String myName;
 
     private LobbySettings currentSettings;
@@ -52,7 +52,7 @@ public class JoinLobbyScreen {
     }
 
     private void showConnectView() {
-        Label nav   = new Label("MAIN MENU  /  MULTIPLAYER  /  JOIN A GAME");
+        Label nav = new Label("MAIN MENU  /  MULTIPLAYER  /  JOIN A GAME");
         nav.getStyleClass().add("nav-title");
 
         Label title = new Label("JOIN A GAME");
@@ -122,7 +122,7 @@ public class JoinLobbyScreen {
             if (raw.isEmpty()) { connectStatus.setText("enter a room code first"); return; }
             try {
                 String[] decoded = RoomCode.decode(raw);
-                String ip   = decoded[0];
+                String ip = decoded[0];
                 int    port = Integer.parseInt(decoded[1]);
                 connectStatus.setText("● connecting to " + ip + ":" + port + "…");
                 connectBtn.setDisable(true);
@@ -179,7 +179,7 @@ public class JoinLobbyScreen {
 
 
     private void showLobbyView(String roomCode, String ip, int port) {
-        Label nav   = new Label("MAIN MENU  /  MULTIPLAYER  /  JOINED LOBBY");
+        Label nav = new Label("MAIN MENU  /  MULTIPLAYER  /  JOINED LOBBY");
         nav.getStyleClass().add("nav-title");
 
         Label title = new Label("JOINED LOBBY");
@@ -312,11 +312,11 @@ public class JoinLobbyScreen {
         int mySlot = client.getMySlot();
 
         for (int i = 0; i < names.size(); i++) {
-            String name  = names.get(i);
+            String name = names.get(i);
             String color = slotColors[i % slotColors.length];
             boolean isMe = i == mySlot;
-            String icon  = i == 0 ? "♟" : "♙";
-            String tag   = i == 0 ? "  [HOST]" : (isMe ? "  [YOU]" : "  [P" + (i + 1) + "]");
+            String icon = i == 0 ? "♟" : "♙";
+            String tag = i == 0 ? "  [HOST]" : (isMe ? "  [YOU]" : "  [P" + (i + 1) + "]");
 
             HBox row = new HBox(10);
             row.setAlignment(Pos.CENTER_LEFT);

@@ -1,19 +1,24 @@
 package com.example.models;
 
 public class GameRules {
-    public int gridWidth = 1280;
-    public int gridHeight = 720;
+    public int    gridWidth = 1280;
+    public int    gridHeight = 720;
     public double playerSpeed = 2.0;
-    public double collisionTolerance = 2.0;
+
+    // Must be strictly LESS than playerSpeed so the head never registers
+    // as hitting a trail point that is exactly one step behind it.
+    // Using 0.75× speed gives clean hits against other players' trails
+    // while avoiding false self-collision from the immediately-prior point.
+    public double collisionTolerance = 1.5;
+
     public Difficulty difficulty = Difficulty.MEDIUM;
 
-    public GameRules() {
-    }
+    public GameRules() {}
 
     public GameRules(int gridWidth, int gridHeight, double playerSpeed) {
         this.gridWidth = gridWidth;
         this.gridHeight = gridHeight;
         this.playerSpeed = playerSpeed;
-        this.collisionTolerance = playerSpeed;
+        this.collisionTolerance = playerSpeed * 0.75;
     }
 }

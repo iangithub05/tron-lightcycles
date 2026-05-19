@@ -94,11 +94,11 @@ public class LanDiscovery {
                     if (parts.length >= 5
                             && NetworkMessage.DISCOVER_RESP.equals(parts[0])) {
                         DiscoveredGame g = new DiscoveredGame();
-                        g.roomCode      = parts[1];
-                        g.hostName      = parts[2];
+                        g.roomCode = parts[1];
+                        g.hostName = parts[2];
                         g.currentPlayers = Integer.parseInt(parts[3]);
-                        g.maxPlayers    = Integer.parseInt(parts[4]);
-                        g.ip            = pkt.getAddress().getHostAddress();
+                        g.maxPlayers = Integer.parseInt(parts[4]);
+                        g.ip = pkt.getAddress().getHostAddress();
                         try {
                             String[] decoded = RoomCode.decode(g.roomCode);
                             g.port = Integer.parseInt(decoded[1]);
