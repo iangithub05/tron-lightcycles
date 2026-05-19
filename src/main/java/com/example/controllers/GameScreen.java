@@ -21,6 +21,7 @@ public class GameScreen {
         Pane canvas = engine.buildCanvas();
 
         StackPane root = new StackPane(canvas);
+        root.setStyle("-fx-background-color: black;");
         engine.start();
         return root;
     }

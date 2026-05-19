@@ -46,11 +46,14 @@ public class SinglePlayerSession extends GameSession {
         initAI();
     }
 
-    /** Faster speed for singleplayer; tolerance kept equal to speed so trails stay solid. */
+    /** Fast singleplayer speed; tolerance is 0.75× speed to avoid false self-hits. */
     private static GameRules makeRules() {
         GameRules r = new GameRules();
-        r.playerSpeed = 3.0;
-        r.collisionTolerance = 3.0;
+        r.playerSpeed = 5.5;
+        r.collisionTolerance = 4.0;
+        // Skip only 3 recent points — the nearest unchecked is 4×5.5=22px away,
+        // well beyond tolerance, so no false self-hits while tight loops now kill.
+        r.safeSkipCount = 3;
         return r;
     }
 
@@ -64,10 +67,10 @@ public class SinglePlayerSession extends GameSession {
     }
 
     private void initAI() {
-        aiControllers = new AIController[]{
-            new AvoidDeathAIController(difficulty, 0),  // Aggressive
-            new AvoidDeathAIController(difficulty, 1),  // Defensive
-            new AvoidDeathAIController(difficulty, 2),  // Chaotic
+        aiControllers = switch (difficulty) {
+            case EASY   -> new AIController[]{ new SPEasyAI(),   new SPEasyAI(),   new SPEasyAI()   };
+            case MEDIUM -> new AIController[]{ new SPMediumAI(), new SPMediumAI(), new SPMediumAI() };
+            case HARD   -> new AIController[]{ new SPHardAI(),   new SPHardAI(),   new SPHardAI()   };
         };
     }
 

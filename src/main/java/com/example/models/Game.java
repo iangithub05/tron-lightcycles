@@ -43,7 +43,7 @@ public class Game {
     }
 
     private int safeSkip() {
-        return 20;
+        return rules.safeSkipCount;
     }
 
     public Player getWinner() {
