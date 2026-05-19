@@ -14,7 +14,7 @@ import java.util.function.*;
 public class GameServer {
 
     private static final int GAME_TICK_MS = 16;
-    private static final int NETWORK_SEND_MS = 50;
+    private static final int NETWORK_SEND_MS = 16;
     private static final int NEXT_ROUND_DELAY_MS = 6250;
 
     public Consumer<Integer>          onPlayerCountChanged;
@@ -76,6 +76,7 @@ public class GameServer {
                 serverSocket = new ServerSocket(port);
                 while (!serverSocket.isClosed()) {
                     Socket socket = serverSocket.accept();
+                    socket.setTcpNoDelay(true);
                     int slot = clients.size() + 1;
                     if (slot >= settings.maxPlayers) {
                         socket.close();

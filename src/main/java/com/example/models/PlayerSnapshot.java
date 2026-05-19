@@ -11,6 +11,7 @@ public class PlayerSnapshot {
     public boolean alive;
     public int score;
     public String name;
+    public Direction direction;
     public List<double[]> trailPoints = new ArrayList<>();
 
     public PlayerSnapshot() {}

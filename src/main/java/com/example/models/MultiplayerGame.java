@@ -151,8 +151,10 @@ public class MultiplayerGame {
             if (trailDeltaOnly) trailSentCount[i] = p.trail.points.size();
 
             String name = i < playerNames.size() ? playerNames.get(i) : "P" + (i + 1);
-            snapshot.players.add(new PlayerSnapshot(i, p.x, p.y, p.alive,
-                    i < matchScores.length ? matchScores[i] : 0, name, trail));
+            PlayerSnapshot ps = new PlayerSnapshot(i, p.x, p.y, p.alive,
+                    i < matchScores.length ? matchScores[i] : 0, name, trail);
+            ps.direction = p.direction;
+            snapshot.players.add(ps);
         }
         return snapshot;
     }
@@ -177,8 +179,10 @@ public class MultiplayerGame {
             if (counters != null && i < counters.length) counters[i] = p.trail.points.size();
 
             String name = i < playerNames.size() ? playerNames.get(i) : "P" + (i + 1);
-            snapshot.players.add(new PlayerSnapshot(i, p.x, p.y, p.alive,
-                    i < matchScores.length ? matchScores[i] : 0, name, trail));
+            PlayerSnapshot ps = new PlayerSnapshot(i, p.x, p.y, p.alive,
+                    i < matchScores.length ? matchScores[i] : 0, name, trail);
+            ps.direction = p.direction;
+            snapshot.players.add(ps);
         }
         return snapshot;
     }
