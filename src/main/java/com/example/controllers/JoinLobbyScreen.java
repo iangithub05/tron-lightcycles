@@ -414,7 +414,7 @@ public class JoinLobbyScreen {
 
         chatScroll = new ScrollPane(chatMessages);
         chatScroll.setFitToWidth(true);
-        chatScroll.setPrefHeight(340);
+        chatScroll.setPrefHeight(280);
         chatScroll.setStyle("-fx-background: #0d1117; -fx-background-color: #0d1117;");
         chatScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
@@ -441,9 +441,9 @@ public class JoinLobbyScreen {
 
         VBox panel = new VBox(8, chatTitle, chatScroll, inputRow);
         panel.setStyle("-fx-background-color: #0d1117; -fx-border-color: #2d3748;"
-                + " -fx-border-width: 1; -fx-padding: 14 20 14 20;");
-        panel.setMinWidth(340);
-        panel.setMaxWidth(340);
+                + " -fx-border-width: 1; -fx-padding: 10 15 10 15;");
+        panel.setMinWidth(300);
+        panel.setMaxWidth(300);
         return panel;
     }
 
@@ -451,7 +451,7 @@ public class JoinLobbyScreen {
         if (chatMessages == null) return;
         Label lbl = new Label("[" + name + "] " + msg);
         lbl.setWrapText(true);
-        lbl.setMaxWidth(300);
+        lbl.setMaxWidth(240);
         lbl.setStyle("-fx-text-fill: " + ("SYSTEM".equals(name) ? "#718096" : "#e2e8f0")
                 + "; -fx-font-family: 'Courier New', monospace; -fx-font-size: 12px;");
         chatMessages.getChildren().add(lbl);
