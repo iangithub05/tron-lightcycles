@@ -53,7 +53,7 @@ public class HostLobbyScreen {
     public StackPane getView() {
         StackPane root = new StackPane();
         root.setBackground(UIHelper.createBackground("/images/background_4.png"));
-        Theme.apply(root);
+        // Theme.apply(root);
 
         BorderPane screen = new BorderPane();
         HBox topBar = UIHelper.createNavigationBar("| HOST A GAME", "WELCOME, " + app.getPlayerName());
