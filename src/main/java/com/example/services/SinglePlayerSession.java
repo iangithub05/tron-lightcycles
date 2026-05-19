@@ -37,6 +37,13 @@ public class SinglePlayerSession extends GameSession {
     private final Difficulty difficulty;
     private AIController[] aiControllers;
 
+    // AI path scoring/flood-fill is the heaviest singleplayer cost.
+    // Recalculate AI decisions every few ticks and keep moving in the previous
+    // chosen direction between recalculations. This keeps motion smooth while
+    // cutting most AI CPU work.
+    private int aiDecisionTick = 0;
+    private static final int AI_DECISION_INTERVAL = 3;
+
     public SinglePlayerSession(Difficulty difficulty) {
         // super() calls buildGame() → creates 2-player game for VS_AI.
         // We immediately replace that with the real 4-player layout below.
@@ -82,13 +89,18 @@ public class SinglePlayerSession extends GameSession {
      */
     @Override
     public boolean tick() {
-        for (int i = 0; i < 3; i++) {
-            Player ai = game.players.get(i + 1);
-            if (ai.alive) {
-                Direction chosen = aiControllers[i].computeDirection(ai, game);
-                ai.setDirection(chosen);
+        boolean recomputeAI = (aiDecisionTick++ % AI_DECISION_INTERVAL) == 0;
+
+        if (recomputeAI) {
+            for (int i = 0; i < 3; i++) {
+                Player ai = game.players.get(i + 1);
+                if (ai.alive) {
+                    Direction chosen = aiControllers[i].computeDirection(ai, game);
+                    ai.setDirection(chosen);
+                }
             }
         }
+
         super.tick();  // runs game.update() — ignore its return value
         Player human = game.players.get(0);
         // Keep running only while the human is alive AND the round isn't over
@@ -98,6 +110,7 @@ public class SinglePlayerSession extends GameSession {
     /** Full reset: rebuild the arena and keep the same AI controller instances. */
     @Override
     public void restart() {
+        aiDecisionTick = 0;
         rebuildGame();
         // AI controllers are stateless between rounds; no need to recreate them
     }
